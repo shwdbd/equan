@@ -12,20 +12,26 @@
 
 '''
 # import pandas as pd
+import tushare as ts
+import equan.demo.SMA.sma_impl as impl
+
+
+# 全局参数
+DATA_SOURCE = 'local'   # 数据来源，tushare | local
 
 
 def get_equity_pool():
     """
     取得选股后的股票列表
-    
+
     Returns:
         list -- 股票代码列表
     """
+    hs300 = impl.get_hs300()
+    print(hs300.head())
 
-    # TODO wait for impl
     return []
 
 
 if __name__ == "__main__":
     get_equity_pool()
-
