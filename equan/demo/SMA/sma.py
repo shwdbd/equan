@@ -18,6 +18,7 @@ import equan.demo.SMA.sma_impl as impl
 
 # 全局参数
 DATA_SOURCE = 'local'   # 数据来源，tushare | local
+BASE_DATE = '20191025'  # 基准日期
 
 
 def get_equity_pool():
@@ -27,11 +28,18 @@ def get_equity_pool():
     Returns:
         list -- 股票代码列表
     """
-    hs300 = impl.get_hs300()
-    print(hs300.head())
+    # 取得股票池，默认沪深300
+    stock_pool = impl.get_hs300()
+    print('取得沪深300股票, 数量={0}'.format( stock_pool.shape[0] ))
+    # print(stock_pool.head())
+
+    # 取得股票池的pe、pb等信息
+    # 取 BASE_DATE 的数据
+
 
     return []
 
 
 if __name__ == "__main__":
     get_equity_pool()
+    # impl.download_tushare_data()

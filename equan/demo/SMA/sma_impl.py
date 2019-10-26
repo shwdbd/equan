@@ -31,3 +31,35 @@ def get_hs300():
 
     # df.to_csv(path_or_buf=r'data\hs300.csv')
     return df.loc[:, field_list]
+
+
+def download_tushare_data():
+    """
+    下载tushare数据到本地
+    """
+    # 1.hs300,  中证500，
+    # 2. stock_basic( symbol, name , industry,  )  where list_status='L' 仅上市
+    # 3. daily_basic( symbol, trade_date, close, pe, pb, total_mv市值)  trade_date 为一个全局参数
+    # 4. 希望再加上一个停牌信息
+
+    file_dir = r'data/'
+    date = '20191025'
+
+    # # 1
+    # file_name = r'stock_basic.csv'
+    # df = ts.get_stock_basics().loc[:, [
+    #     'symbol', 'name', 'industry']]
+    # # print(df.head())
+    # df.to_csv(path_or_buf=file_dir + file_name)
+    # print('股票清单导出到' + file_name)
+
+    # 2 导出所有的股票的价格数据
+    # TODO 按日下载，然后检查
+    # FIXME 这里需要使用tushare_pro的api接口
+    file_name = r'daily_basic_{date}.csv'.format(date=date)
+    df = ts.daily_basic(trade_date = date).loc[:, [
+        'ts_code', 'trade_date', 'close', 'pe', 'pb', 'total_mv']]
+    print(df.head())
+    # df.to_csv(path_or_buf=file_dir + file_name)
+    # print('股票清单导出到' + file_name)
+
