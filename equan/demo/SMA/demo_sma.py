@@ -39,6 +39,7 @@
 import pandas as pd
 import tushare as ts
 import numpy as np
+from functools import reduce
 
 
 token = '341d66d4586929fa56f3f987e6c0d5bd23fb2a88f5a48b83904d134b'
@@ -77,27 +78,55 @@ def get_equity_pool():
     # 600000 浦发银行
 
     # # 基本信息，行业
-    data_basic = ts_pro.stock_basic()
-    data_basic = data_basic[data_basic['symbol'].isin(stock_pool.code)]     # 选择在stock_pool中
-    data_basic = data_basic.loc[:, ['symbol', 'industry']]
-    data_basic.rename({'symbol':'code'})
-    # print(data_basic.head())
+    df = _get_stock_info_by_tushare(stock_pool)
+    
+
+    # 1.3 TODO 计算基本标识
+
+    # 1.4 group找出每个行业 PE*PB 的前三名股票
+    # 添加 pe*pb
+    df['PE_PB'] = df['pe'] * df['pb']
+    print(df.head())
+    gp_df = df.groupby(['行业'])
+    print(gp_df.min())  # TODO 列出每个行业的PE*PB前三名
+
+
+
+def _get_stock_info_by_tushare(stock_pool):
+    """
+    根据给定的股票池信息
+
+    返回一个df，code为index，其余列有：
+    name, industry, ts_code, close, pe, pb, total_mv 
+
+    Arguments:
+        stock_pool {pd.DataFrame} -- 给定的股票池信息，'code', 'name' 两列
+    """
+
+    # # 基本信息，行业
+    df_basic = ts_pro.stock_basic()
+    df_basic = df_basic[df_basic['symbol'].isin(
+        stock_pool.code)]     # 选择在stock_pool中
+    df_basic = df_basic.loc[:, ['symbol', 'industry']]
+    df_basic.rename(columns={'symbol': 'code'}, inplace=True)
+    # print(df_basic.head())
 
     # 每日指标, pe, pb, 总市值
-    df_index = ts_pro.daily_basic(trade_date='20191025').loc[:, ['ts_code','close','pe', 'pb', 'total_mv'] ]
-    df_index['code'] = df_index['ts_code'].apply(lambda x : x[ : x.index('.')]) # 整理ts_code的后缀
+    df_index = ts_pro.daily_basic(trade_date='20191025').loc[:, [
+        'ts_code', 'close', 'pe', 'pb', 'total_mv']]
+    df_index['code'] = df_index['ts_code'].apply(
+        lambda x: x[: x.index('.')])  # 整理ts_code的后缀
     df_index = df_index[df_index['code'].isin(stock_pool.code)]
     # print(df_index.head())
 
     # 合并成总的df
-    # df = stock_pool.merge(df_index, how='left', on='code')
-    # print(df.head())
+    df = reduce(lambda x, y: x.merge(y, how='left', on='code'),
+                [stock_pool, df_basic, df_index])
+    df.rename(columns={'code': '股票代码', 'name': '股票名称', 'industry': '行业',
+                       'close': '价格', 'total_mv': '总市值'}, inplace=True)
+    df.set_index('股票代码', inplace=True)
 
-    df_merge = lambda x, y : x.merge(y, how='left', on='code')
-    df = np.array([stock_pool, df_index]).apply( df_merge )
-    print(df.head())
-
-
+    return df
 
 
 if __name__ == "__main__":
