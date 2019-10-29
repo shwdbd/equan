@@ -108,6 +108,49 @@ SMA回测是根据示例程序写的第一个回测程序。
 
 ## 程序设计
 
+### 总体程序结构
+
+如下：
+
+- 总包：equan.demo.sma
+- 使用CLI命令行进行操作，命令入口 sma.py
+- sma_impl 记录的是实际实现的代码, sma_tool 是工具类代码
+- 单元测试：equan_test.demo.sma.test_sma.py
+- 各模块的接口：
+  - 选股模块:   seek_equity(): list
+  - 策略模块：
+    - 接口类：Strategy：run(equity_code):df有日期和仓位
+    - SMA实现：SMAStrategy
+  - 交易模块：
+    - Trading
+    - run_test(equity_pool, strategy_impl):trading_log_df   交易运行函数
+  - 评估模块：
+    - evaluate(trading_log_df, out_file) 统计后将结果输出到文件
+
+
+
+## 选股模块设计
+
+- 类：
+
+
+
+## 策略模块设计
+
+
+
+## 交易模块设计
+
+
+
+## 评估模块设计
+
+
+
+
+
+
+
 
 
 

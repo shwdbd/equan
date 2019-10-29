@@ -21,25 +21,22 @@ DATA_SOURCE = 'local'   # 数据来源，tushare | local
 BASE_DATE = '20191025'  # 基准日期
 
 
-def get_equity_pool():
+class EquityTradingStrategyFrame:
     """
-    取得选股后的股票列表
-
-    Returns:
-        list -- 股票代码列表
+    股票交易回测框架
     """
-    # 取得股票池，默认沪深300
-    stock_pool = impl.get_hs300()
-    print('取得沪深300股票, 数量={0}'.format( stock_pool.shape[0] ))
-    # print(stock_pool.head())
 
-    # 取得股票池的pe、pb等信息
-    # 取 BASE_DATE 的数据
-
-
-    return []
+    def seek_equity(self):
+        """
+        选股函数
+        
+        Returns:
+            list of str -- 股票代码列表
+        """
+        # TODO 待实现
+        return []
 
 
 if __name__ == "__main__":
-    get_equity_pool()
-    # impl.download_tushare_data()
+    frm = impl.SMATestFrame()
+    frm.seek_equity()

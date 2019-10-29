@@ -105,21 +105,48 @@ def sma(stock_code):
     """
     # 3.1 获取该股票7年的价格数据 data_df
     # 需要字段 trade_date, close，取得从2010年到2019年的数据
-    # df = ts_pro.daily_basic(ts_code='000423.SZ', start_date='20100101', end_date='20191028', fields='trade_date, close')
+    start_dt = '20100101'
+    end_dt='20191028'   # 20191028
+    # df = ts_pro.daily_basic(ts_code='000423.SZ', start_date=start_dt, end_date=end_dt, fields='trade_date, close')
     df = pd.read_csv('data\\000423.csv')
     # print(df.info())
 
     # 3.2 计算SMA_20, SMA_60
     df['SMA_20'] = df['close'].rolling(window=20, min_periods=1).mean()
     df['SMA_60'] = df['close'].rolling(window=60, min_periods=1).mean()
-    print(df.head())
-    # TODO 绘图
-    df_ax = df.plot()
-    plt.show()  # 窗口弹出
-
+    # print(df.head())
+    # 绘图
+    # df_ax = df.loc[:, ['close', 'SMA_20', 'SMA_60']].plot()
+    # plt.show()  # 窗口弹出
+    # 计算昨日的SMA_60
+    df['SMA_20'] = np.round(df['SMA_20'], 2)    # 取两位小数
+    df['SMA_60'] = np.round(df['SMA_60'], 2)
+    df['SMA_20_ysd'] = df['SMA_20'].shift(-1)
+    df['SMA_60_ysd'] = df['SMA_60'].shift(-1)
+    # print(df.head())
 
     # 3.3 根据 金叉、死叉 原理判断 开仓信号position
+    def do_positon(row):
+        sma20 = row[3]
+        sma60 = row[4]
+        sma20_ysd = row[5]
+        sma60_ysd = row[6]
+
+        if (sma20 > sma60) and (sma20_ysd < sma60_ysd):
+            return 1
+        # elif (sma20 < sma60) and (sma20_ysd > sma60_ysd):
+        #     return -1
+        else:
+            return 0
+
+    df['position'] = df.apply(do_positon, axis=1)
+    print(df[df['position']==1])      # 找到开仓机会 
+    df.to_csv('sma.csv')
+
+
     # 3.4 计算每天的return
+
+    
     # 3.5 计算策略每天的return_sma
     # 3.6 绘制 return ， return_sma 的图形
     # 3.7 计算 收益、风险、回撤、总开仓次数
