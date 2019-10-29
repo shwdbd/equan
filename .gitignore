@@ -102,3 +102,8 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+equan_test/__pycache__/__init__.cpython-37.pyc
+equan_test/__pycache__/__init__.cpython-37.pyc
+equan_test/demo/SMA/__pycache__/__init__.cpython-37.pyc
+equan_test/demo/SMA/__pycache__/test_SMA.cpython-37.pyc
+equan_test/demo/__pycache__/__init__.cpython-37.pyc

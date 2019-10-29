@@ -140,15 +140,26 @@ def sma(stock_code):
             return 0
 
     df['position'] = df.apply(do_positon, axis=1)
-    print(df[df['position']==1])      # 找到开仓机会 
-    df.to_csv('sma.csv')
+    # print(df[df['position']==1])      # 找到开仓机会 
+    # df.to_csv('sma.csv')
 
 
     # 3.4 计算每天的return
+    df['close_ysd'] = df['close'].shift(-1) # 昨日价格
+    df['return'] = (df['close']/df['close_ysd'])-1
+    df['return_cumsum'] = df['return'].cumsum()
+    # print(df.head())
 
-    
     # 3.5 计算策略每天的return_sma
-    # 3.6 绘制 return ， return_sma 的图形
+    df['return_sma'] = df['position']*df['return']
+    df['return_sma_cumsum'] = df['return_sma'].cumsum()
+    # print(df[df['position']!=0].head())
+
+    # 3.6 TODO 绘制 return ， return_sma 的图形
+    df_ax = df.loc[:, ['return_cumsum', 'return_sma_cumsum']].plot()
+    plt.show()  # 窗口弹出
+    df.to_csv('sma.csv')
+
     # 3.7 计算 收益、风险、回撤、总开仓次数
     # 3.8 计算 shape_ration
 
