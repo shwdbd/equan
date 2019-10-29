@@ -40,6 +40,7 @@ import pandas as pd
 import tushare as ts
 import numpy as np
 from functools import reduce
+import matplotlib.pyplot as plt
 
 
 token = '341d66d4586929fa56f3f987e6c0d5bd23fb2a88f5a48b83904d134b'
@@ -103,13 +104,18 @@ def sma(stock_code):
     
     """
     # 3.1 获取该股票7年的价格数据 data_df
-    # 需要字段 trade_date, close
-    df = ts_pro.daily_basic(ts_code='000423.SZ', start_date='20100101', end_date='20191028', fields='trade_date, close')
-    # df.to_csv('data\\000423.csv')
-    print(df.info())
+    # 需要字段 trade_date, close，取得从2010年到2019年的数据
+    # df = ts_pro.daily_basic(ts_code='000423.SZ', start_date='20100101', end_date='20191028', fields='trade_date, close')
+    df = pd.read_csv('data\\000423.csv')
+    # print(df.info())
 
     # 3.2 计算SMA_20, SMA_60
-    
+    df['SMA_20'] = df['close'].rolling(window=20, min_periods=1).mean()
+    df['SMA_60'] = df['close'].rolling(window=60, min_periods=1).mean()
+    print(df.head())
+    # TODO 绘图
+    df_ax = df.plot()
+    plt.show()  # 窗口弹出
 
 
     # 3.3 根据 金叉、死叉 原理判断 开仓信号position
