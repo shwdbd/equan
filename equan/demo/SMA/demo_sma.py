@@ -87,9 +87,39 @@ def get_equity_pool():
     # 添加 pe*pb
     df['PE_PB'] = df['pe'] * df['pb']
     print(df.head())
-    gp_df = df.groupby(['行业'])
-    print(gp_df.min())  # TODO 列出每个行业的PE*PB前三名
+    # gp_df = df.groupby(['行业'])
+    # 列出每个行业的PE*PB前三名
+    # TODO 需要去除 NaN 600100
+    df.sort_values(by=['PE_PB'], inplace=True)
+    df_stock = df.groupby(by='行业').head(3).sort_values(by=['行业'])
+    print(df_stock.head(20))
+    stock_list = list(df_stock.index)
+    return stock_list
 
+
+def sma(stock_code):
+    """
+    回测某一股票的SMA策略
+    
+    """
+    # 3.1 获取该股票7年的价格数据 data_df
+    # 需要字段 trade_date, close
+    df = ts_pro.daily_basic(ts_code='000423.SZ', start_date='20100101', end_date='20191028', fields='trade_date, close')
+    # df.to_csv('data\\000423.csv')
+    print(df.info())
+
+    # 3.2 计算SMA_20, SMA_60
+    
+
+
+    # 3.3 根据 金叉、死叉 原理判断 开仓信号position
+    # 3.4 计算每天的return
+    # 3.5 计算策略每天的return_sma
+    # 3.6 绘制 return ， return_sma 的图形
+    # 3.7 计算 收益、风险、回撤、总开仓次数
+    # 3.8 计算 shape_ration
+
+    
 
 
 def _get_stock_info_by_tushare(stock_pool):
@@ -130,4 +160,7 @@ def _get_stock_info_by_tushare(stock_pool):
 
 
 if __name__ == "__main__":
-    get_equity_pool()
+    # get_equity_pool()
+
+    # 000423 东阿阿胶
+    sma('000423')
