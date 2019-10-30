@@ -109,6 +109,7 @@ def sma(stock_code):
     end_dt='20191028'   # 20191028
     # df = ts_pro.daily_basic(ts_code='000423.SZ', start_date=start_dt, end_date=end_dt, fields='trade_date, close')
     df = pd.read_csv('data\\000423.csv')
+    df.sort_values(by='trade_date', inplace=True)
     # print(df.info())
 
     # 3.2 计算SMA_20, SMA_60
