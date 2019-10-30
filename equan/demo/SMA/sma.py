@@ -12,8 +12,7 @@
 
 '''
 # import pandas as pd
-import tushare as ts
-import equan.demo.SMA.sma_impl as impl
+# import tushare as ts
 
 
 # 全局参数
@@ -30,6 +29,8 @@ class EquityTradingStrategyFrame:
         """
         选股函数
         
+        
+
         Returns:
             list of str -- 股票代码列表
         """
@@ -37,6 +38,3 @@ class EquityTradingStrategyFrame:
         return []
 
 
-if __name__ == "__main__":
-    frm = impl.SMATestFrame()
-    frm.seek_equity()
