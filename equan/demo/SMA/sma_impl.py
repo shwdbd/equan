@@ -16,7 +16,7 @@ import os
 
 class SMATestFrame(sma.EquityTradingStrategyFrame):
 
-    DATA_SOURCE = 'local'   # tushare | local
+
 
     # 选股参数
     SEEK_EQUITY_SETTINGS = {
@@ -25,6 +25,8 @@ class SMATestFrame(sma.EquityTradingStrategyFrame):
         'benchmark.trade_date': '20191030',   # PE、PB计算的交易日期
         'topN': 3,   # 按行业取前N个股票
     }
+
+
 
     def seek_equity(self):
         """
@@ -48,41 +50,43 @@ class SMATestFrame(sma.EquityTradingStrategyFrame):
             df_stock_pool = self.get_hs300(fields=['code', 'name'])
         print('获得待选股票池({1})一共{0}个股票'.format(
             df_stock_pool.shape[0], self.SEEK_EQUITY_SETTINGS['stock_pool']))
+        # df_stock_pool['code'].astype('str', copy=False)
+        df_stock_pool = df_stock_pool.astype({'code':'str'})
+        # print(df_stock_pool.shape[0])
+        # print(df_stock_pool[ df_stock_pool['code'] == '402' ])
+        # print(df_stock_pool.info())
+
+        # 根据df_stock_pool收集现需要的字段df(股票代码, 股票名称，行业，PE、PB、市值)
+        # # 基本信息，行业
+        df_basic = self.ts().stock_basic()
+        # print(df_basic.shape[0])
+        # print(df_basic.info())
+        # df_basic['symbol'].isin(df_stock_pool.code).to_csv('xxx.csv')
+        df_basic = df_basic[df_basic['symbol'].isin(df_stock_pool.code)]
+        # df_basic = df_basic.loc[:, ['symbol', 'industry']]
+        # df_basic.rename(columns={'symbol': 'code'}, inplace=True)
+        print(df_basic[ df_basic.symbol == '600000' ].head())
+        # print(df_stock_pool.code.head())
+        # print(df_basic.head())
+        print(df_basic.shape[0])
+        # df_basic.to_csv('xxx.csv')
+
+
 
         # if self.SEEK_EQUITY_SETTINGS['seek.model'] == 'PEPB_MIN':
-        #     return _seek_equity_by_pepb()
+        #     df["PE_m_PB"] = df["pe"] * df['pb']
         # elif self.SEEK_EQUITY_SETTINGS['seek.model'] == 'MATRIX':
         #     return _seek_equity_by_pepb()
 
-        return ['xxxx']
+        return df_stock_pool["code"].tolist()
+        # return []
 
-    def get_hs300(self, fields=None):
-        """
-        根据tushare获取沪深300股票
 
-        Keyword Arguments:
-            fields {list} -- 返回的字段列表 (default: {None})
-
-        Returns:
-            pd.DataFrame -- 沪深300股票(结构同tushare)
-        """
-        # 加入本地缓存功能，找本地文件如没有，则网上下载
-        if self.DATA_SOURCE == 'local':
-            file_path = r'data/hs300.csv'
-            if not os.path.exists(file_path):
-                ts.get_hs300s().to_csv(file_path)
-            df = pd.read_csv(file_path, index_col=0)
-        else:
-            df = ts.get_hs300s()
-
-        if fields == None or len(fields) == 0:
-            # 所有的字段
-            return df
-        else:
-            # 指定字段
-            return df.loc[:, fields]
 
 
 if __name__ == "__main__":
     f = SMATestFrame()
     f.seek_equity()
+
+    # print(ts.get_hs300s().info())
+    # print(f.get_hs300().info())
