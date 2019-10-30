@@ -89,23 +89,45 @@ def get_stock_basic():
 
     return df
 
+
 # 每日指标
-def get_daily_basic(stock_codes=None, start_date=None, end_date=None, fields=None):
+def get_daily_basic(stock_codes=None, trade_date=None, start_date=None, end_date=None, fields=None, cache=False):
     """
     根据tushare获取股票每日指标
 
+    字段参考：https://tushare.pro/document/2?doc_id=32
+
     Keyword Arguments:
         fields {list} -- 返回的字段列表 (default: {None})
-
+    
+    Keyword Arguments:
+        stock_codes str or list -- 单一股票code或股票code列表 (default: {None} 所有股票)
+        trade_date {[type]} -- [description] (default: {None})
+        start_date {[type]} -- [description] (default: {None})
+        end_date {[type]} -- [description] (default: {None})
+        fields {list} -- 返回的字段列表 (default: {None} 所有字段)
+    
     Returns:
         pd.DataFrame -- 沪深300股票(结构同tushare)
     """
 
+    # 参数控制
+    if trade_date is None and (start_date is None or end_date is None):
+        raise Exception('日期参数必须要提供，单一日期或日期区间')
+    if trade_date is not None:
+        start_date = trade_date
+        end_date = trade_date
+
+
+    # TODO 暂时不细化开发，就从网上直接取
+
+    return ts_pro().daily_basic(ts_code='600016.SH', start_date=start_date, end_date=end_date)
+
 
 if __name__ == "__main__":
-    df = get_stock_basic()
+    df = get_daily_basic(stock_codes='600016.SH', start_date='20191029' , end_date='20191029')
 
     print(df.info())
     print(df.head())
 
-    print(df[ df['symbol']=='600016' ].to_dict())
+    # print(df[ df['symbol']=='600016' ].to_dict())

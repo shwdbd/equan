@@ -80,3 +80,17 @@ class Test_data_picker(unittest.TestCase):
 
         # 检查缓存文件是否生成
         self.assertTrue(os.path.exists(dp.DATA_FILE_DIR+r'stock_basic.csv'))
+
+    def test_get_daily_basic(self):
+        """
+        测试 取股票每日指标
+        """
+        # stock_codes=None, trade_date=None, start_date=None, end_date=None, fields=None
+        # TODO 测试单一股票，日期范围
+        # TODO 测试多个股票，单一日期
+        # TODO 测试取部分字段的情况
+
+        # 参数缺失的情况  TODO 不太懂异常测试，先搁置
+        # self.assertRaises(Exception, dp.get_daily_basic, {'trade_date': '12345'})
+
+        # 测试单一股票，日期范围, 600016
