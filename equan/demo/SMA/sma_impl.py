@@ -166,6 +166,8 @@ class SMATestFrame(sma.EquityTradingStrategyFrame):
         return df
 
 
+
+
 if __name__ == "__main__":
     f = SMATestFrame()
     stocks = f.seek_equity()

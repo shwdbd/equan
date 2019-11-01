@@ -28,13 +28,29 @@ class EquityTradingStrategyFrame:
     def seek_equity(self):
         """
         选股函数
-        
-        
 
         Returns:
             list of str -- 股票代码列表
         """
-        # TODO 待实现
         return []
 
 
+    def strategy(stock_list):
+        """
+        策略实现接口，本函数需要被实现
+        
+        返回的DataFrame有字段:
+        date, code, position
+        其中：
+        date, datetime64格式日期
+        code, 6位数字股票代码
+        position，仓位标志, 1买入,-1卖出,0平仓
+
+        Arguments:
+            stock_list {[type]} -- [description]
+        
+        Returns:
+            [type] -- [description]
+        """
+
+        return None
