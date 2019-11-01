@@ -85,12 +85,16 @@ class Test_data_picker(unittest.TestCase):
         """
         测试 取股票每日指标
         """
-        # stock_codes=None, trade_date=None, start_date=None, end_date=None, fields=None
-        # TODO 测试单一股票，日期范围
-        # TODO 测试多个股票，单一日期
-        # TODO 测试取部分字段的情况
+        df = dp.get_daily_basic(ts_code='600016.SH', start_date='20191028', end_date='20191029')
+        self.assertIsInstance(df, pd.DataFrame)
+        self.assertTrue(df.shape[0] == 2)
 
-        # 参数缺失的情况  TODO 不太懂异常测试，先搁置
-        # self.assertRaises(Exception, dp.get_daily_basic, {'trade_date': '12345'})
+        sample_data = {'ts_code': {0: '600016.SH', 1: '600016.SH'}, 'trade_date': {0: 20191029, 1: 20191028}, 'close': {0: 6.16, 1: 6.18}, 'turnover_rate': {0: 0.1055, 1: 0.1636}, 'turnover_rate_f': {0: 0.1094, 1: 0.1697}, 'volume_ratio': {0: 0.72, 1: 1.15}, 'pe': {0: 5.3589, 1: 5.3763}, 'pe_ttm': {0: 5.1536, 1: 5.1704}, 'pb': {
+            0: 0.6541, 1: 0.6562}, 'ps': {0: 1.7204, 1: 1.7259}, 'ps_ttm': {0: 1.5901, 1: 1.5953}, 'total_share': {0: 4378241.8502, 1: 4378241.8502}, 'float_share': {0: 3546212.3213, 1: 3546212.3213}, 'free_share': {0: 3418200.6089999997, 1: 3418200.6089999997}, 'total_mv': {0: 26969969.7972, 1: 27057534.6342}, 'circ_mv': {0: 21844667.8992, 1: 21915592.1456}}
+        self.assertDictEqual(
+            sample_data, df[df['ts_code'] == '600016.SH'].to_dict())
 
-        # 测试单一股票，日期范围, 600016
+        # 检查缓存文件是否生成
+        self.assertTrue(os.path.exists(dp.DATA_FILE_DIR+r'daily_basic_600016.SH_20191028_20191029.csv'))
+
+        

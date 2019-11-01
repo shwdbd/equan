@@ -90,44 +90,59 @@ def get_stock_basic():
     return df
 
 
+def get_daily_basic_by_date(trade_date):
+    CACHE_FILE_NAME = r'daily_basic_{0}.csv'.format(trade_date)
+    if DATA_SOURCE == 'local':
+        file_path = DATA_FILE_DIR + CACHE_FILE_NAME
+        if not os.path.exists(file_path):
+            print('从tushare上缓存 全部股票{0}指标  '.format(trade_date))
+            ts_pro().daily_basic(trade_date=trade_date).to_csv(file_path, index=CVS_INDEX)
+        df = pd.read_csv(file_path, dtype={'ts_code': 'str'})
+    else:
+        df = ts_pro().daily_basic(trade_date=trade_date)
+
+    return df
+
+
 # 每日指标
-def get_daily_basic(stock_codes=None, trade_date=None, start_date=None, end_date=None, fields=None, cache=False):
+def get_daily_basic(ts_code, start_date, end_date, fields=None):
     """
     根据tushare获取股票每日指标
 
     字段参考：https://tushare.pro/document/2?doc_id=32
 
+    Arguments:
+        ts_code {string} -- 股票代码(tushare格式)
+        start_date {yyyyMMdd日期} -- 开始日期
+        end_date {yyyyMMdd日期} -- 结束日期
+
     Keyword Arguments:
-        fields {list} -- 返回的字段列表 (default: {None})
-    
-    Keyword Arguments:
-        stock_codes str or list -- 单一股票code或股票code列表 (default: {None} 所有股票)
-        trade_date {[type]} -- [description] (default: {None})
-        start_date {[type]} -- [description] (default: {None})
-        end_date {[type]} -- [description] (default: {None})
-        fields {list} -- 返回的字段列表 (default: {None} 所有字段)
-    
+        fields {[list of string]} -- 所需要的字段 (default: {None})
+
     Returns:
         pd.DataFrame -- 沪深300股票(结构同tushare)
     """
+    CACHE_FILE_NAME = r'daily_basic_{0}_{1}_{2}.csv'.format(
+        ts_code, start_date, end_date)
+    if DATA_SOURCE == 'local':
+        file_path = DATA_FILE_DIR + CACHE_FILE_NAME
+        if not os.path.exists(file_path):
+            print('从tushare上缓存 每日指标 {0} {1} {2} '.format(
+                ts_code, start_date, end_date))
+            ts_pro().daily_basic(ts_code=ts_code, start_date=start_date,
+                                 end_date=end_date).to_csv(file_path, index=CVS_INDEX)
+        df = pd.read_csv(file_path, dtype={'ts_code': 'str'})
+    else:
+        df = ts_pro().daily_basic(ts_code=ts_code, start_date=start_date, end_date=end_date)
 
-    # 参数控制
-    if trade_date is None and (start_date is None or end_date is None):
-        raise Exception('日期参数必须要提供，单一日期或日期区间')
-    if trade_date is not None:
-        start_date = trade_date
-        end_date = trade_date
+    return df
 
 
-    # TODO 暂时不细化开发，就从网上直接取
+# if __name__ == "__main__":
+#     df = get_daily_basic(ts_code='600016.SH',
+#                          start_date='20191028', end_date='20191029')
 
-    return ts_pro().daily_basic(ts_code='600016.SH', start_date=start_date, end_date=end_date)
+#     print(df.info())
+#     print(df.head())
 
-
-if __name__ == "__main__":
-    df = get_daily_basic(stock_codes='600016.SH', start_date='20191029' , end_date='20191029')
-
-    print(df.info())
-    print(df.head())
-
-    # print(df[ df['symbol']=='600016' ].to_dict())
+#     # print(df[df['ts_code'] == '600016.SH'].to_dict())
