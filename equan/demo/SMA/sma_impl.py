@@ -165,6 +165,34 @@ class SMATestFrame(sma.EquityTradingStrategyFrame):
 
         return df
 
+    def strategy(stock_list):
+        """
+        策略实现接口，本函数需要被实现
+
+        返回的DataFrame有字段:
+        date, code, position
+        其中：
+        date, datetime64格式日期
+        code, 6位数字股票代码
+        position，仓位标志, 1买入,-1卖出,0平仓
+
+        # SMA的策略：
+        1. 计算20, 60日的移动平均线；
+        2. 
+
+
+
+        Arguments:
+            stock_list {[type]} -- [description]
+
+        Returns:
+            [type] -- [description]
+        """
+        
+
+
+
+        return None
 
 
 

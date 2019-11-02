@@ -34,11 +34,10 @@ class EquityTradingStrategyFrame:
         """
         return []
 
-
     def strategy(stock_list):
         """
         策略实现接口，本函数需要被实现
-        
+
         返回的DataFrame有字段:
         date, code, position
         其中：
@@ -48,7 +47,7 @@ class EquityTradingStrategyFrame:
 
         Arguments:
             stock_list {[type]} -- [description]
-        
+
         Returns:
             [type] -- [description]
         """
