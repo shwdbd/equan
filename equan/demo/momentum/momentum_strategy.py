@@ -18,14 +18,14 @@
 '''
 import pandas as pd
 import tushare as ts
-# import numpy as np
-# import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.pyplot as plt
 
 # 回测指数
 INDEX_CODE = '000300.SH'
 # 回测数据日期范围
-START_DATE = '20190101'
-END_DATE = '20190110'
+START_DATE = '20100101'
+END_DATE = '20101010'
 
 
 token = '341d66d4586929fa56f3f987e6c0d5bd23fb2a88f5a48b83904d134b'
@@ -58,7 +58,52 @@ def get_data():
     return df
 
 
+def strategy_1day(data):
+    """
+    动量策略实现，一天动量的实现
+    """
+    # 股票的收益(连续)
+    data['return'] = np.log(data['price']/data['price'].shift(1))
+    # 计算持仓信号
+    data['position'] = np.sign(data['return'])
+    # 计算策略收益
+    data['strategy_return'] = data['position'] * data['return'].shift(1)
+    draw_return(['return', 'strategy_return'])
+
+    return data
+
+
+def strategy_Nday(data):
+    """
+    动量策略实现，使用N日平均价的实现
+    """
+    N = 2
+    # 股票的收益(连续)
+    data['return'] = np.log(data['price']/data['price'].shift(1))
+    # 计算持仓信号
+    data['position_Nday'] = np.sign(data['return'].rolling(N).mean())
+    data['position_Nday'].where( data['position_Nday']==-1, 0, inplace=True)
+    # 计算策略收益
+    
+    data['NDay_strategy_return'] = data['position_Nday'] * data['return'].shift(1)
+    # 绘图
+    draw_return(['return', 'NDay_strategy_return'])
+
+    return data
+
+
+def draw_return(columns):
+    """
+    绘制收益率比较曲线
+
+    Arguments:
+        columns {[type]} -- [description]
+    """
+    data[columns].cumsum().apply(np.exp).plot()
+    plt.show()
+
+
 if __name__ == "__main__":
     data = get_data()
-    print(data.head())
-    print(data.info())
+    data = strategy_Nday(data)
+    print(data.head(20))
