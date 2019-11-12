@@ -3,7 +3,7 @@ import unittest
 import equan.demo.SMA.sma_impl as impl
 import equan.demo.SMA.data_picker as dp
 import pandas as pd
-from pandas.util.testing import assert_frame_equal
+# from pandas.util.testing import assert_frame_equal
 from pandas.api.types import is_string_dtype
 import os
 
@@ -85,7 +85,8 @@ class Test_data_picker(unittest.TestCase):
         """
         测试 取股票每日指标
         """
-        df = dp.get_daily_basic(ts_code='600016.SH', start_date='20191028', end_date='20191029')
+        df = dp.get_daily_basic(ts_code='600016.SH',
+                                start_date='20191028', end_date='20191029')
         self.assertIsInstance(df, pd.DataFrame)
         self.assertTrue(df.shape[0] == 2)
 
@@ -95,6 +96,5 @@ class Test_data_picker(unittest.TestCase):
             sample_data, df[df['ts_code'] == '600016.SH'].to_dict())
 
         # 检查缓存文件是否生成
-        self.assertTrue(os.path.exists(dp.DATA_FILE_DIR+r'daily_basic_600016.SH_20191028_20191029.csv'))
-
-        
+        self.assertTrue(os.path.exists(dp.DATA_FILE_DIR +
+                                       r'daily_basic_600016.SH_20191028_20191029.csv'))
