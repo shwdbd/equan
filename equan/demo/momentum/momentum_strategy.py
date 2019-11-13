@@ -24,8 +24,8 @@ import matplotlib.pyplot as plt
 # 回测指数
 INDEX_CODE = '000300.SH'
 # 回测数据日期范围
-START_DATE = '20100101'
-END_DATE = '20101010'
+START_DATE = '20180101'
+END_DATE = '20180210'
 
 
 token = '341d66d4586929fa56f3f987e6c0d5bd23fb2a88f5a48b83904d134b'
@@ -66,9 +66,45 @@ def strategy_1day(data):
     data['return'] = np.log(data['price']/data['price'].shift(1))
     # 计算持仓信号
     data['position'] = np.sign(data['return'])
-    # 计算策略收益
+    # 计算策略收益，体现在第二天
     data['strategy_return'] = data['position'] * data['return'].shift(1)
+
+    # 计算累计收益
+    data['strategy_return_cumsum'] = data['strategy_return'].cumsum()
+    print(data.head(20))
+
+    # 绘图
     draw_return(['return', 'strategy_return'])
+
+    return data
+
+# 单独用离散收益计算一次
+
+
+def strategy_1day_dis(data):
+    """
+    动量策略实现，一天动量的实现
+    """
+    # 股票的收益(离散)
+    data['return'] = data['price']/data['price'].shift(1) - 1
+    # 计算持仓信号
+    # data['position'] = np.sign(data['return'].shift(1))
+    # data['position'] = data['position'].where(data['return'].shift(1)<0, 0)
+
+    data['position'] = 0
+    data['position'] = np.where(data['return'].shift(1) > 0, 1, 0)
+
+    # 计算策略收益，体现在第二天
+    data['strategy_return'] = data['position'] * data['return'].shift(1)
+
+    # # 计算累计收益
+    # data['strategy_return_cumsum'] = data['strategy_return'].cumsum()
+    print(data.head(20))
+
+    # 绘图
+    lst = ['return', 'strategy_return']
+    data[lst].cumprod().apply().plot()
+    plt.show()
 
     return data
 
@@ -77,19 +113,57 @@ def strategy_Nday(data):
     """
     动量策略实现，使用N日平均价的实现
     """
-    N = 2
+    N = 90
     # 股票的收益(连续)
     data['return'] = np.log(data['price']/data['price'].shift(1))
     # 计算持仓信号
     data['position_Nday'] = np.sign(data['return'].rolling(N).mean())
-    data['position_Nday'].where( data['position_Nday']==-1, 0, inplace=True)
+    # data['position_Nday'].where( data['position_Nday'] == 1, 0, inplace=True)
     # 计算策略收益
-    
-    data['NDay_strategy_return'] = data['position_Nday'] * data['return'].shift(1)
+    data['NDay_strategy_return'] = data['position_Nday'] * \
+        data['return'].shift(1)
     # 绘图
     draw_return(['return', 'NDay_strategy_return'])
 
     return data
+
+
+def strategy_ND(data):
+    """
+    穷举法参数寻优优化后的策略
+    """
+    # 股票的收益(连续)
+    data['return'] = np.log(data['price']/data['price'].shift(1))
+    data['return_dis_cum'] = (data['return']+1).cumprod()   # 计算离散收益，有问题
+
+    price_polt = ['return_dis_cum']
+    for days in [10, 20, 30, 60]:
+        price_polt.append('sty_cumr_{0}'.format(days))
+        data['postion_{0}'.format(days)] = np.where(
+            data['return'].rolling(days).mean() > 0, 1, -1)
+        data['strategy_{0}'.format(days)] = data['postion_{0}'.format(
+            days)].shift(1) * data['return']
+        data['sty_cumr_{0}'.format(days)] = (
+            data['strategy_{0}'.format(days)] + 1).cumprod()
+
+    # 绘图
+    data[price_polt].dropna().plot()
+    # data[['return', 'return_dis_cum']].dropna().plot()
+    plt.show()
+
+    return data
+
+
+def strategy_estimator(data):
+    """
+    TODO 策略评估
+
+    评估后有几个指标：
+    - 累计收益
+    - 最大回撤
+    - 交易次数
+
+    """
 
 
 def draw_return(columns):
@@ -105,5 +179,5 @@ def draw_return(columns):
 
 if __name__ == "__main__":
     data = get_data()
-    data = strategy_Nday(data)
-    print(data.head(20))
+    data = strategy_1day_dis(data)
+    # print(data.head())
