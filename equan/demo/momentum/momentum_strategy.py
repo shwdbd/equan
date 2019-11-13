@@ -22,7 +22,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # 回测指数
-INDEX_CODE = '000300.SH'
+INDEX_CODE = '000300.SH'    # 沪深300
 # 回测数据日期范围
 START_DATE = '20180101'
 END_DATE = '20180210'
