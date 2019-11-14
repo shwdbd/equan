@@ -11,6 +11,12 @@
 TODO df.cumsum示例
 file:///C:/wjjNAS/SynologyDrive/07%20dev/pandas_doc/reference/api/pandas.DataFrame.cumsum.html#pandas.DataFrame.cumsum
 
+
+- return_by_log     对数收益率计算示例
+- position_count    仓位统计示例
+- max_retreat       最大回撤
+
+
 '''
 import pandas as pd
 import numpy as np
@@ -18,6 +24,45 @@ import matplotlib.pyplot as plt
 # 支持中文
 plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
 plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
+
+
+def position_count():
+    """
+    仓位统计示例
+
+    1. 交易次数统计（分Long、Short）
+    2. 持仓天数计算，[d1, d2, ...]
+
+    统计交易信息，返回一个df：
+    1. 交易方向(long or short)|开仓日期|关仓日期|持仓天数(交易日)|买入价|卖出价|期间收益率|
+    TODO 此函数做成unittest
+    """
+    # 准备模拟数据 date|postion
+    price_list = [0, 1, 1, 1, 0, 0, -1, -1, 0]  # 1：Long仓位， -1：Short仓位，0关闭仓位
+    data = pd.DataFrame(price_list, columns=['交易信号'], index=pd.date_range(
+        '20190101', periods=len(price_list)))
+    # print(data)
+
+    # 计算买入卖出信号, 返回 [[1, 开仓日期, 关仓日期], ... ]
+    data['开关信号'] = np.where(
+        (data['交易信号'] != 0) & (data['交易信号'].shift(1) == 0), data['交易信号'], np.nan)
+    data['开关信号'] = np.where(
+        (data['交易信号'] == 0) & (data['交易信号'].shift(1) != 0), data['交易信号'], data['开关信号'])
+    data.dropna(subset=['开关信号'], inplace=True)
+    del(data['开关信号'])
+    print(data)
+
+    df_open = data[ data['交易信号']!=0 ].reset_index()
+    df_open.rename(columns={'index':'开仓日期'}, inplace=True)
+    df_close = data[ data['交易信号']==0 ][1:].reset_index()
+    df_close.rename(columns={'index':'关仓日期'}, inplace=True)
+    print(df_open)
+    print(df_close)
+
+    df = pd.concat([df_open, df_close['关仓日期']], axis='columns')
+    print(df)
+    # print(data[ data['交易信号']!=0 ])
+    # print(data[ data['交易信号']==0 ][1:])
 
 
 def return_by_log():
@@ -56,4 +101,4 @@ def return_by_log():
 
 
 if __name__ == "__main__":
-    return_by_log()
+    position_count()

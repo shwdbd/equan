@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 INDEX_CODE = '000300.SH'
 # 回测数据日期范围
 START_DATE = '20100101'
-END_DATE = '20140630'
+END_DATE = '20130630'
 # 均值SMA计算天数
 SMA_DAYS = 50
 # 开仓距离
@@ -99,7 +99,7 @@ def strategy_estimator(data):
 
     # 计算策略收益
     data['sgy_return'] = data['position'].shift(1) * data['return']
-    data['sgy_return_cum'] = data['sgy_return'].dropna().cumsum()
+    data['sgy_return_cum'] = data['sgy_return'].dropna().cumsum().apply(np.exp)   # TODO 没有exp是有问题的
 
     # TODO 计算最终收益率
 
@@ -110,10 +110,16 @@ def strategy_estimator(data):
     # 绘制收益图
     draw_return(data)
 
+    
+
 
 def draw_return(data):
-    data[['sgy_return', 'return']].dropna().cumsum().apply(np.exp).plot(figsize=(10, 6))
-    plt.show()
+    """
+    绘制收益曲线
+
+    """
+    data[['sgy_return', 'return']].dropna().cumsum().apply(
+        np.exp).plot(figsize=(10, 6))
 
 
 def draw_position(data):
@@ -123,7 +129,6 @@ def draw_position(data):
     TODO 子图绘制：价差与SMA的关系图
     """
     data[['position']].dropna().plot(figsize=(10, 6))
-    plt.show()
 
 
 def draw_distance(data):
@@ -134,14 +139,12 @@ def draw_distance(data):
     plt.axhline(THESHOLD, color='r')
     plt.axhline(-THESHOLD, color='r')
     plt.axhline(0, color='r')
-    plt.show()
 
 
 def draw_price(data):
     """绘制价格走势图
     """
     data[['price']].dropna().plot(figsize=(10, 6))
-    plt.show()
 
 
 if __name__ == "__main__":
@@ -151,4 +154,5 @@ if __name__ == "__main__":
 
     strategy_estimator(data)    # 计算收益
 
-    print(data.tail(100))
+    print(data.tail())
+    plt.show()

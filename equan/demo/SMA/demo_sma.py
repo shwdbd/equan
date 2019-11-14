@@ -80,7 +80,6 @@ def get_equity_pool():
 
     # # 基本信息，行业
     df = _get_stock_info_by_tushare(stock_pool)
-    
 
     # 1.3 TODO 计算基本标识
 
@@ -101,12 +100,12 @@ def get_equity_pool():
 def sma(stock_code):
     """
     回测某一股票的SMA策略
-    
+
     """
     # 3.1 获取该股票7年的价格数据 data_df
     # 需要字段 trade_date, close，取得从2010年到2019年的数据
     start_dt = '20100101'
-    end_dt='20191028'   # 20191028
+    end_dt = '20191028'   # 20191028
     # df = ts_pro.daily_basic(ts_code='000423.SZ', start_date=start_dt, end_date=end_dt, fields='trade_date, close')
     df = pd.read_csv('data\\000423.csv')
     df.sort_values(by='trade_date', inplace=True)
@@ -141,12 +140,11 @@ def sma(stock_code):
             return 0
 
     df['position'] = df.apply(do_positon, axis=1)
-    # print(df[df['position']==1])      # 找到开仓机会 
+    # print(df[df['position']==1])      # 找到开仓机会
     # df.to_csv('sma.csv')
 
-
     # 3.4 计算每天的return
-    df['close_ysd'] = df['close'].shift(-1) # 昨日价格
+    df['close_ysd'] = df['close'].shift(-1)  # 昨日价格
     df['return'] = (df['close']/df['close_ysd'])-1
     df['return_cumsum'] = df['return'].cumsum()
     # print(df.head())
@@ -163,8 +161,6 @@ def sma(stock_code):
 
     # 3.7 计算 收益、风险、回撤、总开仓次数
     # 3.8 计算 shape_ration
-
-    
 
 
 def _get_stock_info_by_tushare(stock_pool):
