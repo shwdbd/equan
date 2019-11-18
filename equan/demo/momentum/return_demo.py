@@ -64,6 +64,13 @@ def position_count():
     # print(data[ data['交易信号']!=0 ])
     # print(data[ data['交易信号']==0 ][1:])
 
+    # 按行分割成小的df：
+    price_list = [0, 1, 1, 1, 0, 0, -1, -1, 0]  # 1：Long仓位， -1：Short仓位，0关闭仓位
+    data = pd.DataFrame(price_list, columns=['交易信号'], index=pd.date_range(
+        '20190101', periods=len(price_list)))
+    print(data)
+    print(data[ (data.index >= '20190102') & (data.index < '20190105') ])
+
 
 def return_by_log():
     """
