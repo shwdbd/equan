@@ -25,8 +25,8 @@ class HammerStrategy:
         'HAMMER.ENTITY_TO_PRICE': 0.03,   # 实体/股价 的上限
         'HAMMER.HEADER_TO_TAIL': 0.5,   # 上影线长度/下影线长度
         'HAMMER.TAIL_TO_ENTITY': 2,   # 下影线长度/实体
-        'MA.windows' : 10,   # 观察窗口
-        'STOPLOSE_TRIGGER' : 1,  # 表示当价格偏离均线满足几倍标注按察时止损
+        'MA.windows': 10,   # 观察窗口
+        'STOPLOSE_TRIGGER': 1,  # 表示当价格偏离均线满足几倍标注按察时止损
     }
 
     def get_data(self):
@@ -44,8 +44,21 @@ class HammerStrategy:
         在 data 中新增一列：hammer,1表示当日是锤子线，0表示不是
         """
         # 计算K Bar的各部分长度
-        data['k_body'] = abs( data['open']-data['close'] )
+        data['k_body'] = abs(data['open']-data['close'])
+        data['k_head'] = data['high'] - \
+            data[['open', 'close']].max(axis='columns')
+        data['k_tail'] = data[['open', 'close']].min(
+            axis='columns') - data['low']
 
+        # 判断是否是锤子线：
+        data['k_body_cond'] = np.where(
+            data['k_body']/data['open'] < self.settings['HAMMER.ENTITY_TO_PRICE'], True, False)
+        data['k_head_cond'] = np.where(
+            data['k_tail'] == 0, False, data['k_head']/data['k_tail'] < self.settings['HAMMER.HEADER_TO_TAIL'])
+        data['k_tail_cond'] = np.where(
+            data['k_body'] == 0, True, data['k_tail']/data['k_body'] > self.settings['HAMMER.TAIL_TO_ENTITY'])
+        data['hammer'] = data[['k_body_cond', 'k_head_cond',
+                               'k_tail_cond']].all(axis='columns')
 
         return data
 
@@ -80,16 +93,17 @@ if __name__ == "__main__":
     # DAY3: NO, Bar过长
     # DAY4：NO, 上影线过长
     # DAY5: YES，十字星
+    # DAY6: NO，当日亏损情况
     # df: index|date,open,close,high,low;order by date
     data_dict = {
         "date": pd.date_range('20190101', periods=5),
-        "high": [10.01, 11, 11, 11, 11],
-        "open": [10, 10, 10, 10, 10],
-        "close": [9, 9, 9, 9, 9],
-        "low": [1, 2, 2, 2, 2],
+        "high": [11, 11, 10.1, 20, 11],
+        "open": [10.01, 10, 10, 10.01, 10],
+        "close": [10, 9, 8, 10, 10],
+        "low": [1, 8, 0.1, 1, 2],
     }
     data = pd.DataFrame(data_dict)
     print(data)
 
     data = sty.find_hammer(data)
-    print(data)
+    print(data['hammer'].to_list())
