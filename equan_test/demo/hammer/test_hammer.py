@@ -12,6 +12,9 @@ import unittest
 import equan.demo.hammer.hammer as hammer
 import pandas as pd
 
+# TODO 待测试，get_data函数
+# 
+
 
 class Test_SetHammerFlag(unittest.TestCase):
     """
