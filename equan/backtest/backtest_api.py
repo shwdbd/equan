@@ -9,8 +9,10 @@
 @Desc    :   回测API
 '''
 import datetime
+import time
 import equan.backtest.biz_tools as bt
-from equan.backtest.tl import log
+from equan.backtest.tl import log, tushare
+import pandas as pd
 
 
 class StrategyCase:
@@ -26,8 +28,9 @@ class StrategyCase:
     benchmark = ''					 # str，事先算好的benchmark收益率数据
     freq = 'd'					     # 策略执行频率，目前只支持d日频率回测
     refresh_rate = 1				 # 执行handle_data的时间间隔，目前只支持int日期，不支持weekly、Monthly的写法
+    max_history_window = 100         # 回溯数据窗口（单位：天），默认100天
 
-    accounts = {}					 # 账户的字典
+    accounts = {}					 # 账户的字典集合
     # 按账户名进行存放，如 'my_account' : Account(fdsafdsa)
 
     def initialize(self, context):
@@ -64,11 +67,11 @@ class Context:
     _universe = None
 
     # 时间：
-    now = None              # 当前时间, datetime格式
-    today = None            # 当前日期, datetime格式
-    previous_date = None    # 前一交易日, datetime格式
+    now = None              # 当前时间, str(yyyyMMdd HHmmSS)格式
+    today = None            # 当前日期, str(yyyyMMdd)格式
+    previous_date = None    # 前一交易日, str(yyyyMMdd)格式
 
-    def __init__(self, trade_datetime, accounts, universe):
+    def __init__(self, accounts, universe):
         """
         初始化策略运行环境
 
@@ -81,23 +84,26 @@ class Context:
             trade_datetime {[type]} -- [description]
             accounts {[type]} -- [description]
         """
-        log.debug('初始化{0}的Context'.format(trade_datetime))
-        # 初始化当天的日期
-        self.now = datetime.datetime.strptime(
-            trade_datetime+" 000000", bt.DATETIME_FORMAT)
-        self.today = datetime.datetime.strptime(
-            trade_datetime, bt.DATETIME_FORMAT.split(' ')[0])
-        self.previous_date = datetime.datetime.strptime(
-            bt.Trade_Cal.previous_date(trade_datetime), bt.DATETIME_FORMAT.split(' ')[0])
+        log.debug('初始化Context')
 
         # 资产池,根据日期，计算当日的资产列表
         self._universe = universe
 
         # 账户配置：
+        self._accounts = accounts
 
-        # 头寸配置
-
-        # TODO
+    def set_date(self, day_str):
+        """
+        设置环境日期
+        
+        Arguments:
+            trade_datetime {[type]} -- yyyyMMdd格式日期字符串
+        """
+        # 初始化当天的日期
+        # TODO 待单元测试
+        self.now = day_str + " 000000"
+        self.today = day_str
+        self.previous_date = bt.Trade_Cal.previous_date(day_str)
 
     def get_account(self, account_name):
         """
@@ -130,24 +136,28 @@ class Context:
         """
         return self._universe
 
-    def get_history(symbol, attribute, time_range, freq='1d', style='sat', rtype='frame'):
+    def get_history(self, symbol, fields, time_range=1, freq='1d', style='sat', rtype='frame'):
         """获取历史数据
 
         - 只返回 context.previous_date 之前日期的数据（含previous_date）
         - attribute 返回的字段可以有：open, close
         - style类似优矿，有三种模式可以返回选择
 
-
-        Arguments:
-            symbol {[type]} -- [description]
-            attribute {[type]} -- [description]
-            time_range {int} -- 返回之前N天的数据
-
-        Keyword Arguments:
-            freq {str} -- [description] (default: {'1d'})
-            style {str} -- [description] (default: {'sat'})
-            rtype {str} -- [description] (default: {'frame'})
         """
+        data = {}
+        if style.upper() == 'TAS':
+            # DSA模式，key=日期, index是symbol, col是参数
+            date_list = pd.date_range(end='20190101', periods=time_range) # TODO 日期转成datetime yyyyMMdd格式
+            for day in date_list:
+                print(type(day))
+                data[str(day)] = pd.DataFrame()  # TODO 日期转成datetime格式
+                
+
+            # tushare.daily( ts_code='', trade_date='', fields=attribute)    # 多个要合并
+
+        print(data)
+
+
         # TODO 待实现
         pass
 
@@ -164,7 +174,7 @@ class Account:
     capital_base = 0        # 初始资金
     _cash_account_balance = 0   # 现金账户余额
     # 暂不支持账户初始持仓的情况，默认持仓为空
-    _position = {}  # 每日的所有仓位 {'20190101':Position对象, ...}
+    positions = {}  # 每日的所有仓位 {'20190101':Position对象, ...}
     _orders = {}    # 每日的所有订单
 
     def __init__(self, name, capital_base):

@@ -12,6 +12,13 @@ from equan.backtest.tl import tushare
 
 # 日期格式
 DATETIME_FORMAT = "%Y%m%d %H%M%S"
+DATE_FORMAT = "%Y%m%d"
+
+
+# class DateTimeUtils:
+
+    # def to_date_str(datetime_obj):
+
 
 
 class Trade_Cal:

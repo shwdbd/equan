@@ -28,7 +28,7 @@ class StrategyRunner:
         # 初始化context
         # 加载数据
         # 加载Account、Universe
-        context = None
+        context = api.Context(case_obj.accounts, case_obj.universe)
 
         # 策略初始化
         case_obj.initialize(context)
@@ -37,7 +37,7 @@ class StrategyRunner:
             log.debug('策略按日{0} : '.format(day))
 
             # 按日初始化context对象（调整日期，调整可访问的数据）
-            context = api.Context(day, case_obj.accounts, case_obj.universe)
+            context.set_date(day)
 
             # 策略逻辑处理
             case_obj.handle_data(context)

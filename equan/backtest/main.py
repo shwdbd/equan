@@ -10,6 +10,7 @@
 '''
 import equan.backtest.backtest_api as api
 import equan.backtest.runner as runner
+from equan.backtest.tl import log
 
 
 class MyCase(api.StrategyCase):
@@ -35,26 +36,22 @@ class MyCase(api.StrategyCase):
         # account = context.get_account('my_account')
         # universe = context.get_universe()
 
-        # print('handle_data')
-        pass
+        log.debug('handle_data {0}'.format(context.today))
+
         # 策略：40%资金买民生银行，60%资金买五粮液
 
 
 if __name__ == "__main__":
 
-    fnf = runner.StrategyRunner
-    fnf.back_test_run(MyCase())
+    # fnf = runner.StrategyRunner
+    # fnf.back_test_run(MyCase())
 
-    # # context 初始化
-    # day = '20190105'
-    # context = api.Context(day, accounts={})
-    # print(type(context.now))
-    # print(context.now)
-    # print(type(context.previous_date))
-    # print(context.previous_date)
+    # 取得数据
+    universe = api.StockUniverse(['600016', '600320'])
+    context = api.Context(None, universe)
+    context.set_date('20190110')
+    # 取得数据
+    # pool = ['600016', '600320']
+    data = context.get_history(symbol=['600016', '600320'], fields=['open', 'close'], time_range=5, freq='1d', style='tas', rtype='frame')
+    print(data)
 
-    # # str_now = "20171123"
-    # # str_now += ' 000000'
-    # # dt_now = datetime.datetime.strptime(str_now, "%Y%m%d %H%M%S")
-    # # print(type(dt_now))
-    # # print(dt_now)
