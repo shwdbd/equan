@@ -30,7 +30,8 @@ class StrategyRunner:
 
         # 策略初始化
         case_obj.initialize(context)
-        for day in pd.date_range(start=case_obj.start, end=case_obj.end):  # 根据参数，获得所有的交易日进行循环
+        # 根据参数，获得所有的交易日进行循环
+        for day in pd.date_range(start=case_obj.start, end=case_obj.end):
             # FIXME 此处要改为交易日
 
             # 按日初始化context对象（调整日期，调整可访问的数据）
@@ -46,5 +47,3 @@ class StrategyRunner:
             # 统计汇总
             # 发送交易信号微信等
         # 所有日期策略执行结束后，统计输出策略结果
-
-    

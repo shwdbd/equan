@@ -15,5 +15,24 @@
     "python.linting.flake8Enabled": true,
     "python.linting.enabled": true,
 
-    "python.linting.flake8Args": ["--max-line-length=120"]
+    "python.linting.flake8Args": ["--max-line-length=120"],
+
+    "todo-tree.highlights.defaultHighlight": {
+        "icon": "alert",
+        "type": "text",
+        "foreground": "red",
+        "background": "white",
+        "opacity": 50,
+        "iconColour": "blue"
+    },
+    "todo-tree.highlights.customHighlight": {
+        "TODO": {
+            "icon": "check",
+            "type": "line"
+        },
+        "FIXME": {
+            "foreground": "black",
+            "iconColour": "yellow"
+        }
+    }
 }

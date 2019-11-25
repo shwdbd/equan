@@ -11,6 +11,7 @@
 import equan.backtest.backtest_api as api
 import equan.backtest.runner as runner
 import pandas as pd
+from equan.backtest.tl import *
 
 
 class MyCase(api.StrategyCase):
@@ -39,8 +40,10 @@ class MyCase(api.StrategyCase):
 
 if __name__ == "__main__":
    
-    fnf = runner.StrategyRunner
-    fnf.back_test_run(MyCase())
+    # fnf = runner.StrategyRunner
+    # fnf.back_test_run(MyCase())
 
     # print( pd.date_range(start='20180101', end='20180131') )
+
+    log.info('rizhi ')
 
