@@ -28,7 +28,7 @@ class StrategyCase:
     accounts = {}					 # 账户的字典
     # 按账户名进行存放，如 'my_account' : Account(fdsafdsa)
 
-    def initialize(context):
+    def initialize(self, context):
         """
         初始化策略运行环境(本函数必须被策略子类实现)
 
@@ -40,7 +40,7 @@ class StrategyCase:
         """
         raise NotImplementedError
 
-    def handle_data(context):
+    def handle_data(self, context):
         """
         核心策略逻辑在此处实现
 
@@ -58,7 +58,7 @@ class Context:
 
     _data = {}   # SAT模式的数据集合
 
-    _accounts = None
+    _accounts = {}
     _universe = None
 
     def now(self):
@@ -145,8 +145,10 @@ class Account:
     账户类
     """
 
-    account_name = ''       # 账户名
-    account_type = 'stock'  # 账户类型
+    ATYPE_Stock = 'STOCK'   # 账户类型：股票
+
+    name = ''       # 账户名
+    account_type = ''       # 账户类型
     capital_base = 0        # 初始资金
     _cash_account_balance = 0   # 现金账户余额
     # 暂不支持账户初始持仓的情况，默认持仓为空
@@ -154,7 +156,7 @@ class Account:
     _orders = {}    # 每日的所有订单
 
     def __init__(self, name, capital_base):
-        self.account_name = name
+        self.name = name
         self.capital_base = capital_base
         self._cash_account_balance = self.capital_base  # 现金账户余额初始化
 
@@ -169,7 +171,8 @@ class Account:
         # 2. 默认下单全部成交，然后更新cash信息
 
         # TODO 待实现
-        pass
+        print('order in account')
+        
 
     def order_pct(symbol, pct):
         """
@@ -188,6 +191,23 @@ class Account:
         pass
 
 
+class StockAccount(Account):
+    """
+    股票账户
+
+    Arguments:
+        Account {[type]} -- [description]
+    """
+    account_type = Account.ATYPE_Stock
+
+    def __init__(self, name, capital_base):
+        super().__init__(name, capital_base)
+
+    def order(self, symbol, amount, order_type='close'):
+
+        print('order in stock account')
+
+
 class Position:
     """
     仓位信息
@@ -195,17 +215,22 @@ class Position:
     symbol = ''     # 资产编号
     trade_date = ''     # 交易日期
 
-    profit = 0.0          # 持仓盈亏浮动 = value - cost
+    profit = 0.0          # 持仓盈亏浮动 = (value - cost)*amount
     cost = 0.0            # 开仓成本
     value = 0.0           # 持仓市值
     amount = 0      # 持仓数量
+
+    
+
+
 
 
 class Order:
     """
     订单类
 
-
+    买单：现金position --> 股票position
+    卖单：股票position --> 现金position
 
     """
 
@@ -218,7 +243,7 @@ class Order:
     order_time = None   # datetime，下单时间
     order_amount = 0    # 委托数量
     order_price = 0.00  # 委托价格
-    state = Order.STATE_OPEN    # 订单状态
+    state = STATE_OPEN    # 订单状态
     direction = 0       # 买卖方向
     offset_flag = ''    # 开平仓标识， open为开仓，close为关仓
 
