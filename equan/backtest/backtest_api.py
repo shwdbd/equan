@@ -8,8 +8,9 @@
 @Contact :   shwangjj@163.com
 @Desc    :   回测API
 '''
-
-# here put the import lib
+import datetime
+import equan.backtest.biz_tools as bt
+from equan.backtest.tl import log
 
 
 class StrategyCase:
@@ -20,6 +21,7 @@ class StrategyCase:
     # 全局变量：
     start = ''                       # 回测起始时间，yyyyMMdd格式
     end = ''                         # 回测结束时间，yyyyMMdd格式
+    name = ''                        # 策略名称
     universe = None					 # 资产池
     benchmark = ''					 # str，事先算好的benchmark收益率数据
     freq = 'd'					     # 策略执行频率，目前只支持d日频率回测
@@ -61,35 +63,41 @@ class Context:
     _accounts = {}
     _universe = None
 
-    def now(self):
-        """
-        获取策略运行时的当前时刻，如2017-01-04 09:30:00
+    # 时间：
+    now = None              # 当前时间, datetime格式
+    today = None            # 当前日期, datetime格式
+    previous_date = None    # 前一交易日, datetime格式
 
-        Returns:
-            [datetime] -- [description]
+    def __init__(self, trade_datetime, accounts, universe):
         """
-        # TODO 待实现
-        return ''
+        初始化策略运行环境
 
-    def current_date(self):
-        """
-        获取策略运行时的当前日期，如2017-01-04 09:30:00
+        1. 账户dict引用
+        2. 日期初始化
+        3. 资产池按日初始化
+        4. 账户的当日Position初始化
 
-        Returns:
-            [datetime] -- [description]
+        Arguments:
+            trade_datetime {[type]} -- [description]
+            accounts {[type]} -- [description]
         """
-        # TODO 待实现
-        return ''
+        log.debug('初始化{0}的Context'.format(trade_datetime))
+        # 初始化当天的日期
+        self.now = datetime.datetime.strptime(
+            trade_datetime+" 000000", bt.DATETIME_FORMAT)
+        self.today = datetime.datetime.strptime(
+            trade_datetime, bt.DATETIME_FORMAT.split(' ')[0])
+        self.previous_date = datetime.datetime.strptime(
+            bt.Trade_Cal.previous_date(trade_datetime), bt.DATETIME_FORMAT.split(' ')[0])
 
-    def previous_date(self):
-        """
-        获取当前回测日期的前一交易日，如2017-01-04 09:30:00
+        # 资产池,根据日期，计算当日的资产列表
+        self._universe = universe
 
-        Returns:
-            [datetime] -- [description]
-        """
-        # TODO 待实现
-        return ''
+        # 账户配置：
+
+        # 头寸配置
+
+        # TODO
 
     def get_account(self, account_name):
         """
@@ -98,7 +106,11 @@ class Context:
         Returns:
             [type] -- [description]
         """
-        return self._accounts[account_name]
+
+        try:
+            return self._accounts[account_name]
+        except Exception:
+            return None
 
     def get_accounts(self):
         """
@@ -172,7 +184,6 @@ class Account:
 
         # TODO 待实现
         print('order in account')
-        
 
     def order_pct(symbol, pct):
         """
@@ -211,6 +222,9 @@ class StockAccount(Account):
 class Position:
     """
     仓位信息
+
+    Position(symbol: 601318.XSHG, amount: 100, cost: 34.649, profit: 33.3, value: 3498.2)
+
     """
     symbol = ''     # 资产编号
     trade_date = ''     # 交易日期
@@ -220,10 +234,6 @@ class Position:
     value = 0.0           # 持仓市值
     amount = 0      # 持仓数量
 
-    
-
-
-
 
 class Order:
     """
@@ -231,6 +241,11 @@ class Order:
 
     买单：现金position --> 股票position
     卖单：股票position --> 现金position
+
+    Order(order_id: 2017-01-03-0000001, order_time: 2017-01-03 09:30
+    , symbol: 600000.XSHG, direction: 1, order_amount: 100
+    , state: ORDER_SUBMITTED, filled_time: , filled_amount: 0
+    , transact_price: 0.0000, slippage: 0.0000, commission: 0.0000)
 
     """
 
@@ -258,3 +273,60 @@ class OrderDealer:
     def deal_order(account):
         # TODO 待实现
         pass
+
+
+class Universe:
+    """
+    资产池基类
+    """
+
+    symbol_ids = []  # 资产编号集合
+
+    def get_symbols(self, date):
+        """
+        取得某个时刻的资产id列表(本函数需要实现)
+
+        Arguments:
+            date {[type]} -- [description]
+        """
+        raise NotImplementedError
+
+
+class StockUniverse(Universe):
+    """
+    动态股票资产池
+    """
+
+    def __init__(self, stock_list):
+        self.symbol_ids = stock_list
+
+    def get_symbols(self, date):
+        # 静态池，不受到影响
+        # FIXME 需要剔除当天停牌的股票
+        return self.symbol_ids
+
+
+class DynamicStockIndexUniverse(Universe):
+    """
+    动态 股票指数
+
+    目前支持的指数：
+    1. HS300    沪深300
+
+    """
+
+    def __init__(self, index_id="HS300", date=None):
+        """
+
+        Arguments:
+            Universe {[type]} -- [description]
+            index_id {[type]} -- [description]
+            date     {datetime} -- 日期，指数
+        """
+
+        self.symbol_ids = index_id
+
+    def get_symbols(self, date):
+        # 静态池，不受到影响
+        # FIXME 需要剔除当天停牌的股票
+        return self.symbol_ids

@@ -9,6 +9,24 @@
 @Desc    :   回测项目的通用工具集合
 '''
 import logging.config
+import tushare as ts
+
+
+# =============================================
+# tushare接口
+token = '341d66d4586929fa56f3f987e6c0d5bd23fb2a88f5a48b83904d134b'
+
+
+def get_ts_pro_api():
+    """
+    取得pro 的 python api接口
+    :return: 接口对象
+    """
+    ts.set_token(token)
+    return ts.pro_api()
+
+
+tushare = get_ts_pro_api()
 
 
 # =============================================
@@ -34,3 +52,5 @@ log = get_logger()
 
 # if __name__ == "__main__":
 #     log.info('fda 中文')
+#     df = ts.trade_cal(exchange='SSE', start_date='20180101', end_date='20180131', is_open='1')
+#     print(df.head())

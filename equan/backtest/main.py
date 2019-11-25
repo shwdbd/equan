@@ -10,16 +10,17 @@
 '''
 import equan.backtest.backtest_api as api
 import equan.backtest.runner as runner
-import pandas as pd
-from equan.backtest.tl import *
 
 
 class MyCase(api.StrategyCase):
     start = '20190101'
-    end = '20190201'
+    end = '20190107'
     benchmark = 'HS300'
     freq = 'd'
     refresh_rate = 1
+
+    # 资产池
+    universe = api.StockUniverse(['600016', '600320'])
 
     # 设定账户
     accounts = {
@@ -31,19 +32,29 @@ class MyCase(api.StrategyCase):
         pass
 
     def handle_data(self, context):
-        account = context.get_account('my_account')
-        universe = context.get_universe()
+        # account = context.get_account('my_account')
+        # universe = context.get_universe()
 
-        print('handle_data')
+        # print('handle_data')
+        pass
         # 策略：40%资金买民生银行，60%资金买五粮液
 
 
 if __name__ == "__main__":
-   
-    # fnf = runner.StrategyRunner
-    # fnf.back_test_run(MyCase())
 
-    # print( pd.date_range(start='20180101', end='20180131') )
+    fnf = runner.StrategyRunner
+    fnf.back_test_run(MyCase())
 
-    log.info('rizhi ')
+    # # context 初始化
+    # day = '20190105'
+    # context = api.Context(day, accounts={})
+    # print(type(context.now))
+    # print(context.now)
+    # print(type(context.previous_date))
+    # print(context.previous_date)
 
+    # # str_now = "20171123"
+    # # str_now += ' 000000'
+    # # dt_now = datetime.datetime.strptime(str_now, "%Y%m%d %H%M%S")
+    # # print(type(dt_now))
+    # # print(dt_now)

@@ -9,7 +9,8 @@
 @Desc    :   回测框架执行接口
 '''
 import equan.backtest.backtest_api as api
-import pandas as pd
+import equan.backtest.biz_tools as bt
+from equan.backtest.tl import log
 
 
 class StrategyRunner:
@@ -21,7 +22,8 @@ class StrategyRunner:
     def back_test_run(case_obj):
         # 运行策略实例
 
-        print('开始运行策略')
+        log.info('开始运行策略')
+        # TODO 检查Case的合法性
 
         # 初始化context
         # 加载数据
@@ -31,13 +33,11 @@ class StrategyRunner:
         # 策略初始化
         case_obj.initialize(context)
         # 根据参数，获得所有的交易日进行循环
-        for day in pd.date_range(start=case_obj.start, end=case_obj.end):
-            # FIXME 此处要改为交易日
+        for day in bt.Trade_Cal.date_range(start=case_obj.start, end=case_obj.end):
+            log.debug('策略按日{0} : '.format(day))
 
             # 按日初始化context对象（调整日期，调整可访问的数据）
-            context = api.Context()
-            context._accounts = case_obj.accounts   # FIXME 此处需要修改
-            # TODO 初始化context
+            context = api.Context(day, case_obj.accounts, case_obj.universe)
 
             # 策略逻辑处理
             case_obj.handle_data(context)
