@@ -143,7 +143,7 @@ class Context:
         - attribute 返回的字段可以有：open, close
         - style类似优矿，有三种模式可以返回选择
 
-        """
+        """ 
         data = {}
         if style.upper() == 'TAS':
             # DSA模式，key=日期, index是symbol, col是参数

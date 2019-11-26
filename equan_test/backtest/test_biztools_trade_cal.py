@@ -37,6 +37,8 @@ class Test_Trade_Cal(unittest.TestCase):
     def test_date_range_3(self):
         """
         测试 取得一定范围内日期(日期参数异常)
+
+        # TODO 此种情况要抛出异常
         """
         dates = bt.Trade_Cal.date_range('aaa', None)
         self.assertListEqual([], dates)
@@ -47,6 +49,21 @@ class Test_Trade_Cal(unittest.TestCase):
         """
         dates = bt.Trade_Cal.date_range('2017-1-1', '2017-1-10')
         self.assertListEqual([], dates)
+
+    def test_date_range_5(self):
+        """
+        测试 取得一定范围内日期(有 periods 参数)
+        """
+        # 往后数
+        dates = bt.Trade_Cal.date_range(start='20191101', periods=5)
+        benchmark = ['20191101', '20191104',
+                     '20191105', '20191106', '20191107']
+        self.assertListEqual(benchmark, dates)
+        # 往前数
+        dates = bt.Trade_Cal.date_range(end='20191101', periods=5)
+        benchmark = ['20191028', '20191029',
+                     '20191030', '20191031', '20191101']
+        self.assertListEqual(benchmark, dates)
 
     def test_previous_date(self):
         """
