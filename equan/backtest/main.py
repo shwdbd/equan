@@ -88,6 +88,8 @@ if __name__ == "__main__":
     context.set_date('20191118')
     acct = context.get_account('my_account')
     order3 = acct.order(symbol='600016.SH', amount=100, order_type=api.Order.ORDER_SHORT)
+    # 买不起
+    order4 = acct.order(symbol='600016.SH', amount=5000000, order_type=api.Order.ORDER_LONG)
     # 交易撮合
     context.make_deal()
     print('cash = {0}'.format(context.get_account('my_account').get_cash()))
@@ -96,16 +98,6 @@ if __name__ == "__main__":
     print(acct.get_value())
     print(acct.get_order('000003'))
 
-    # # 头寸变动
-    # # amount (price) value_change   |cost     value   profit
-    # # 100    1       100             1*100    100     0
-    # # 100    2       200             300      400     400-300=100
-    # # -100   1                       200      100     -100
-    # p = api.Position('600016.SH')
-    # print(p)
-    # p.change(direct=1, the_amount=100, the_price=1)
-    # print(p)
-    # p.change(direct=1, the_amount=100, the_price=2)
-    # print(p)
-    # p.change(direct=-1, the_amount=100, the_price=1)
-    # print(p)
+    
+
+    print(order4)
