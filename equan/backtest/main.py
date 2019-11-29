@@ -41,17 +41,49 @@ class MyCase(api.StrategyCase):
         # 策略：40%资金买民生银行，60%资金买五粮液
 
 
+class OrderTestCase(api.StrategyCase):
+    start = '20191104'
+    end = '20191105'
+    benchmark = 'HS300'
+    freq = 'd'
+    refresh_rate = 1
+
+    # 资产池
+    universe = api.StockUniverse(['600016', '600320'])
+
+    # 设定账户
+    accounts = {
+        'my_account': api.StockAccount('my_account', capital_base=10000)
+    }
+
+    def initialize(self, context):
+        print('策略 初始化')
+
+    def handle_data(self, context):
+        account = context.get_account('my_account')
+
+
 if __name__ == "__main__":
 
     # fnf = runner.StrategyRunner
     # fnf.back_test_run(MyCase())
 
-    # 取得数据
-    universe = api.StockUniverse(['600016', '600320'])
-    context = api.Context(None, universe)
-    context.set_date('20190110')
-    # 取得数据
-    # pool = ['600016', '600320']
-    data = context.get_history(symbol=['600016', '600320'], fields=['open', 'close'], time_range=5, freq='1d', style='tas', rtype='frame')
-    print(data)
+
+    # 账户下单测试
+    case = OrderTestCase()
+    context = api.Context(case.accounts, case.universe)
+    context.set_date('20191105')
+    # print(context.get_universe(context.today))
+    # 账户下单
+    acct = context.get_account('my_account')
+    order1 = acct.order(symbol='600016', amount=300, order_type=api.Order.ORDER_LONG)
+    print(order1)
+    # TODO 待测试，订单不是100的情况
+
+
+    # i =1
+    # si = str(i).zfill(5)
+    # print( si )
+    # print( int(si) )
+
 
