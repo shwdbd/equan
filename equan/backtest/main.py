@@ -9,7 +9,6 @@
 @Desc    :   代码执行
 '''
 import equan.backtest.backtest_api as api
-import equan.backtest.runner as runner
 from equan.backtest.tl import log
 
 
@@ -49,7 +48,7 @@ class OrderTestCase(api.StrategyCase):
     refresh_rate = 1
 
     # 资产池
-    universe = api.StockUniverse(['600016', '600320'])
+    universe = api.StockUniverse(['600016.SH', '600320.SH'])
 
     # 设定账户
     accounts = {
@@ -76,9 +75,15 @@ if __name__ == "__main__":
     # print(context.get_universe(context.today))
     # 账户下单
     acct = context.get_account('my_account')
-    order1 = acct.order(symbol='600016', amount=300, order_type=api.Order.ORDER_LONG)
+    order1 = acct.order(symbol='600016.SH', amount=300, order_type=api.Order.ORDER_LONG)
+    order2 = acct.order(symbol='600016.SH', amount=100, order_type=api.Order.ORDER_SHORT)
+    order3 = acct.order(symbol='600099.SH', amount=100, order_type=api.Order.ORDER_SHORT)
     print(order1)
+    print(order2)
+    print(order3)
+    print(acct.get_orders())
     # TODO 待测试，订单不是100的情况
+    
 
 
     # i =1

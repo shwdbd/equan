@@ -8,8 +8,8 @@
 @Contact :   shwangjj@163.com
 @Desc    :   回测API
 '''
-import datetime
-import time
+# import datetime
+# import time
 import equan.backtest.biz_tools as bt
 from equan.backtest.tl import log, tushare
 import pandas as pd
@@ -137,13 +137,15 @@ class Context:
             acct_list.append(self.get_account(acct_name))
         return acct_list
 
-    def get_universe(self, date):
+    def get_universe(self, date=None):
         """
         取得资产池
 
         Returns:
             [type] -- [description]
         """
+        if date is None:
+            date = self.today
         return self._universe.get_symbols(date)
 
     def get_history(self, symbol, fields, time_range=1, freq='1d', style='sat', rtype='frame'):
@@ -288,26 +290,29 @@ class StockAccount(Account):
 
     def order(self, symbol, amount, order_type):
         """[summary]
-        
+
         Arguments:
             symbol {[type]} -- [description]
             amount {[type]} -- [description]
             order_type {[type]} -- [description]
-        
+
         Returns:
             [type] -- [description]
         """
-        log.debug('股票账户下单')
-        # 参数检查：
-        # 1. TODO 检查symbol是否在资产池中
+        log.debug('股票账户{0}下单'.format(self.name))
 
         order = Order(symbol, self)
         try:
-            # TODO 检查amount是否是100的倍数或是0，否则订单状态就是 REJECTED
             if amount != 0 and amount % 100 != 0:
+                # TODO 检查amount是否是100的倍数或是0，否则订单状态就是 REJECTED
                 order.state = OrderState.REJECTED
                 order.state_message = '股票单 交易数量 必须以100为单位'
+            elif symbol not in self.get_context().get_universe():
+                # 检查symbol是否在资产池中，不在则状态为  REJECTED
+                order.state = OrderState.REJECTED
+                order.state_message = '股票{0}不在可交易的资产池中，不能下单'.format(symbol)
             else:
+                # 正常下单:
                 order.order_amount = amount
                 order.direction = order_type
                 if order.direction:
@@ -318,9 +323,10 @@ class StockAccount(Account):
                 # 按当日open价格计算委托价格
                 # TODO 考虑数据取不到的情况
                 # TODO 取数据要简化
-                open_price = float(tushare.daily(ts_code='600016.SH', trade_date=self.get_context().today)['open'])
+                open_price = float(tushare.daily(
+                    ts_code='600016.SH', trade_date=self.get_context().today)['open'])
                 order.order_price = open_price
-                
+
                 # TODO ？怎么判断，开平仓标识
                 order.state = OrderState.OPEN
 
@@ -328,6 +334,7 @@ class StockAccount(Account):
             order.state = OrderState.ERROR
             order.state_message = '系统异常:' + str(sys_e)
         finally:
+            self._orders.append(order)
             return order
 
         return order
@@ -339,7 +346,7 @@ class Position:
 
     Position(symbol: 601318.XSHG, amount: 100, cost: 34.649, profit: 33.3, value: 3498.2)
 
-{'000425.XSHE': 
+    {'000425.XSHE':
   Position(symbol: 000425.XSHE, amount: 200, available_amount: 200, cost: 3.37, profit: 4.0, value: 678.0)}
 
     """
@@ -431,7 +438,8 @@ class Order:
 
     def __str__(self):
         """返回一个对象的描述信息"""
-        str_arr = ', '.join(['%s=\'%s\'' % item for item in self.__dict__.items()])
+        str_arr = ', '.join(
+            ['%s=\'%s\'' % item for item in self.__dict__.items()])
         return "Order({0})".format(str_arr)
 
 
