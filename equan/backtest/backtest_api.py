@@ -166,12 +166,19 @@ class Context:
                 # 交易金额
                 # TODO 撮合时，计算 总成交金额，并更新Order的order_capital项目
                 order_capital = order.order_price * order.order_amount
-                log.debug('成交金额 = {0}, 成交价格={1}'.format(order_capital, order.order_price))
+                log.debug('成交金额 = {0}, 成交价格={1}'.format(
+                    order_capital, order.order_price))
                 # 做多时检查现金账户余额是否足够：
                 if order.direction == Order.ORDER_LONG and acct.get_cash() < order_capital:
                     log.debug('现金不足，订单撤销！')
                     order.state_message = '现金不足({0}<{1})，订单撤销！'.format(
                         acct.get_cash(), order_capital)
+                    order.state = OrderState.CANCELED  # 更新order的状态
+                elif order.direction == Order.ORDER_SHORT and (acct.get_position(order.symbol).available_amount < order.order_amount):
+                    # 做空时，仓中股票数量不足的情况
+                    log.debug('账户中股票不足可卖出数量，订单撤销！')
+                    order.state_message = '持有股票数量不足({0}<{1})，订单撤销！'.format(
+                        acct.get_position(order.symbol_id).available_amount, order.order_amount)
                     order.state = OrderState.CANCELED  # 更新order的状态
                 else:
                     log.debug('订单{0} 买卖 {1} {2}份'.format(
@@ -185,7 +192,7 @@ class Context:
                     if not position:
                         position = Position(symbol=order.symbol)
                         acct.get_positions()[order.symbol] = position
-                    
+
                     position = acct.get_positions()[order.symbol]
                     position.change(
                         direct=order.direction, the_amount=order.order_amount, the_price=order.order_price)
@@ -257,11 +264,12 @@ class Account:
         Returns:
             [type] -- [description]
         """
-        if symbol_id in self._positions.keys():
-            return self._positions[symbol_id]
-        else:
-            return None
 
+        if symbol_id not in self._positions.keys():
+            position = Position(symbol=symbol_id)
+            self.get_positions()[symbol_id] = position
+        return self._positions[symbol_id]
+        
     def get_orders(self, state=None):
         """
         返回账户所有订单，返回list

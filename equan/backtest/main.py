@@ -68,7 +68,7 @@ if __name__ == "__main__":
     # fnf.back_test_run(MyCase())
 
 
-    # 账户下单测试
+    # 账户下单
     case = OrderTestCase()
     context = api.Context(case.accounts, case.universe)
     # 第一天

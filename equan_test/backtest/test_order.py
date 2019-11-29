@@ -122,3 +122,6 @@ class Test_StockOrder(unittest.TestCase):
         self.assertIsNotNone(order)
         self.assertEqual(api.OrderState.REJECTED, order.state)     # 状态
         self.assertEqual("股票单交易数量必须以100为单位(amount=123)", order.state_message)
+
+
+
