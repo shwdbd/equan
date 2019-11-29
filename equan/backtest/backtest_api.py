@@ -12,7 +12,7 @@
 # import time
 import equan.backtest.biz_tools as bt
 from equan.backtest.tl import log, tushare
-import pandas as pd
+# import pandas as pd
 
 
 class StrategyCase:
@@ -107,7 +107,6 @@ class Context:
             trade_datetime {[type]} -- yyyyMMdd格式日期字符串
         """
         # 初始化当天的日期
-        # TODO 待单元测试
         self.now = day_str + " 000000"
         self.today = day_str
         self.previous_date = bt.Trade_Cal.previous_date(day_str)
@@ -148,29 +147,52 @@ class Context:
             date = self.today
         return self._universe.get_symbols(date)
 
-    def get_history(self, symbol, fields, time_range=1, freq='1d', style='sat', rtype='frame'):
-        """获取历史数据
-
-        - 只返回 context.previous_date 之前日期的数据（含previous_date）
-        - attribute 返回的字段可以有：open, close
-        - style类似优矿，有三种模式可以返回选择
-
+    def make_deal(self):
         """
-        data = {}
-        if style.upper() == 'TAS':
-            # DSA模式，key=日期, index是symbol, col是参数
-            # TODO 日期转成datetime yyyyMMdd格式
-            date_list = pd.date_range(end='20190101', periods=time_range)
-            for day in date_list:
-                print(type(day))
-                data[str(day)] = pd.DataFrame()  # TODO 日期转成datetime格式
+        撮合今天交易
+        """
+        # 1. 找出所有账户、所有OPEN状态的Order
+        # 2. 进行购买/卖出操作（操作Poistion和Cash）
+        # 3. 设置Order的状态
+        # rule1： 如果现金不足，则全单失败！
+        # END
 
-            # tushare.daily( ts_code='', trade_date='', fields=attribute)    # 多个要合并
+        log.debug('开始{0}的交易撮合'.format(self.today))
+        for acct in self.get_accounts():
+            log.debug('撮合账户{0}:'.format(acct.name))
+            open_orders = acct.get_orders(state=OrderState.OPEN)
+            for order in open_orders:
+                # 按账户进行撮合
+                # 交易金额
+                # TODO 撮合时，计算 总成交金额，并更新Order的order_capital项目
+                order_capital = order.order_price * order.order_amount
+                log.debug('成交金额 = {0}, 成交价格={1}'.format(order_capital, order.order_price))
+                # 做多时检查现金账户余额是否足够：
+                if order.direction == Order.ORDER_LONG and acct.get_cash() < order_capital:
+                    log.debug('现金不足，订单撤销！')
+                    order.state_message = '现金不足({0}<{1})，订单撤销！'.format(
+                        acct.get_cash(), order_capital)
+                    order.state = OrderState.CANCELED  # 更新order的状态
+                else:
+                    log.debug('订单{0} 买卖 {1} {2}份'.format(
+                        order.order_id, order.symbol, order.order_amount))
 
-        print(data)
+                    # TODO 此处要实现 事务处理
+                    # 现金账户扣减
+                    acct.update_cash(-1*order.direction*order_capital)
+                    # 得到Position账户， TODO 改成工厂方法
+                    position = acct.get_position(order.symbol)
+                    if not position:
+                        position = Position(symbol=order.symbol)
+                        acct.get_positions()[order.symbol] = position
+                    
+                    position = acct.get_positions()[order.symbol]
+                    position.change(
+                        direct=order.direction, the_amount=order.order_amount, the_price=order.order_price)
 
-        # TODO 待实现
-        pass
+                    # 交易成功,更新order的filled_amount
+                    order.filled_amount = order.order_amount    # 订单成交数量
+                    order.state = OrderState.FILLED
 
 
 class Account:
@@ -187,11 +209,22 @@ class Account:
     _positions = {}                 # 每个资产的持仓情况 {'600016':Position对象, ...}
     _orders = []                    # 每日的所有订单，Order对象列表
     _context = None                 # 对环境的引用
+    _total_value = 0.0              # 总价值
 
     def __init__(self, name, capital_base):
         self.name = name
         self.capital_base = capital_base
         self._cash = self.capital_base  # 现金账户余额初始化
+
+    def get_value(self):
+        """
+        返回账户总市价
+        """
+        total_value = 0
+        for symbol, position in self.get_positions().items():
+            total_value += position.value
+
+        return self.get_cash() + total_value
 
     def set_context(self, context):
         self._context = context
@@ -205,6 +238,9 @@ class Account:
         """
         return self._cash
 
+    def update_cash(self, volume):
+        self._cash = self._cash + volume
+
     def get_positions(self):
         """
         取得所有的持仓头寸
@@ -214,20 +250,42 @@ class Account:
         """
         return self._positions
 
-    def get_position(self, date):
+    def get_position(self, symbol_id):
         """
-        按日期返回某日头寸
+        按资产编号返回某日头寸
 
         Returns:
             [type] -- [description]
         """
-        return self._positions[date]
+        if symbol_id in self._positions.keys():
+            return self._positions[symbol_id]
+        else:
+            return None
 
-    def get_orders(self):
+    def get_orders(self, state=None):
         """
         返回账户所有订单，返回list
+
+        默认返回所有状态的order
         """
-        return self._orders
+        if state is None:
+            return self._orders
+        else:
+            order_list = []
+            for o in self._orders:
+                if o.state == state:
+                    order_list.append(o)
+            return order_list
+
+    def get_order(self, order_id=None):
+        """根据订单号返回订单对象
+
+        Arguments:
+            order_id {str} -- 订单号
+        """
+        for o in self._orders:
+            if o.order_id == order_id:
+                return o
 
     def order(self, symbol, amount, order_type):
         """
@@ -304,9 +362,10 @@ class StockAccount(Account):
         order = Order(symbol, self)
         try:
             if amount != 0 and amount % 100 != 0:
-                # TODO 检查amount是否是100的倍数或是0，否则订单状态就是 REJECTED
+                # 检查amount是否是100的倍数或是0，否则订单状态就是 REJECTED
                 order.state = OrderState.REJECTED
-                order.state_message = '股票单 交易数量 必须以100为单位'
+                order.state_message = '股票单交易数量必须以100为单位(amount={0})'.format(
+                    amount)
             elif symbol not in self.get_context().get_universe():
                 # 检查symbol是否在资产池中，不在则状态为  REJECTED
                 order.state = OrderState.REJECTED
@@ -344,29 +403,56 @@ class Position:
     """
     资产持仓情况
 
-    Position(symbol: 601318.XSHG, amount: 100, cost: 34.649, profit: 33.3, value: 3498.2)
+    amount (price) value_change   |cost     value   profit
+    100    1       100             1*100    100     0
+    100    2       200             300      400     400-300=100
 
-    {'000425.XSHE':
-  Position(symbol: 000425.XSHE, amount: 200, available_amount: 200, cost: 3.37, profit: 4.0, value: 678.0)}
 
     """
     symbol = ''             # 资产编号
-    trade_date = ''         # 持仓日期
 
-    amount = 0              # 持仓数量
+    amount = 0              # 当前持仓数量
     available_amount = 0    # 可卖出持仓数量
-    profit = 0.0            # 累计持仓盈亏浮动 = (value - cost)*amount
     cost = 0.0              # 平均开仓成本
-    value = 0.0             # 持仓市值（随市场价格变动）
+    value = 0.0             # 当前持仓市值（随市场价格变动）
 
-    def __init__(self, symbol, trade_date=trade_date):
+    profit = 0.0            # 累计持仓盈亏浮动 = (value - cost)*amount
+
+    def __init__(self, symbol):
         self.symbol = symbol
-        self.trade_date = trade_date
         self.amount = 0              # 持仓数量
         self.available_amount = 0    # 可卖出持仓数量
         self.profit = 0.0            # 累计持仓盈亏浮动 = (value - cost)*amount
         self.cost = 0.0              # 平均开仓成本
         self.value = 0.0             # 持仓市值（随市场价格变动）
+        self.change(1, 0, 0)
+
+    def change(self, direct, the_amount, the_price):
+        """
+        仓位变动
+
+        仓位变动后，有几个属性会随之改变：
+        1. amount、available_amount 和 value
+        2. profit = value / amount
+
+        Arguments:
+            direct {int} -- 仓位变动方向，1多头，-1空头
+            the_amount {int} -- 此次买卖的头寸数量
+            the_cost {float} -- 此次买卖头寸价格，买入卖出的价格
+
+        amount (price) value_change   |cost     value   profit
+        100    1       100             1*100    100     0
+        100    2       200             300      400     400-300=100
+        -100   1                       200      100     -100
+        """
+        self.amount = self.amount + direct * the_amount
+        self.available_amount = self.amount
+        self.value = self.amount * the_price    # 市场价
+
+        # 平均成本：
+        self.cost = self.cost + direct * (the_amount*the_price)
+        # 收益
+        self.profit = self.value - self.cost
 
     def __str__(self):
         """返回一个对象的描述信息"""
@@ -441,16 +527,6 @@ class Order:
         str_arr = ', '.join(
             ['%s=\'%s\'' % item for item in self.__dict__.items()])
         return "Order({0})".format(str_arr)
-
-
-class OrderDealer:
-    """
-    订单撮合
-    """
-
-    def deal_order(account):
-        # TODO 待实现
-        pass
 
 
 class Universe:

@@ -84,7 +84,7 @@ class SMATestFrame(sma.EquityTradingStrategyFrame):
             df['企业规模'] = df['总市值'].apply(size_of_company)
             # 根据PE、PB，判断是否可以选择
 
-            def choose_by_pepb(df):
+            def choose_by_pepb(df):              
                 size = df['总市值']
                 pb = df['PB']
                 pe = df['PE']
@@ -92,8 +92,8 @@ class SMATestFrame(sma.EquityTradingStrategyFrame):
                 if size == '大':
                     if (pb < 0.7 and pe < 30) or (pb < 0.8 and pe < 6):
                         return '1'
-                elif size == '
-                if (pb < 0.8 and pe < 50) or (pb < 1 and pe < 10):
+                elif size == '中':
+                    if (pb < 0.8 and pe < 50) or (pb < 1 and pe < 10):
                         return '1'
                 elif size == '小':
                     if (pb < 0.9 and pe < 50) or (pb < 1 and pe < 20):

@@ -42,7 +42,7 @@ class StrategyRunner:
             # 策略逻辑处理
             case_obj.handle_data(context)
             # 订单撮合
-            api.OrderDealer.deal_order(context.get_accounts())
+            context.make_deal()
 
             # 统计汇总
             # 发送交易信号微信等

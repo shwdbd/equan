@@ -71,24 +71,41 @@ if __name__ == "__main__":
     # 账户下单测试
     case = OrderTestCase()
     context = api.Context(case.accounts, case.universe)
+    # 第一天
     context.set_date('20191105')
-    # print(context.get_universe(context.today))
     # 账户下单
     acct = context.get_account('my_account')
     order1 = acct.order(symbol='600016.SH', amount=300, order_type=api.Order.ORDER_LONG)
     order2 = acct.order(symbol='600016.SH', amount=100, order_type=api.Order.ORDER_SHORT)
-    order3 = acct.order(symbol='600099.SH', amount=100, order_type=api.Order.ORDER_SHORT)
     print(order1)
-    print(order2)
-    print(order3)
-    print(acct.get_orders())
-    # TODO 待测试，订单不是100的情况
-    
+    # 交易撮合
+    context.make_deal()
+    print('cash = {0}'.format(context.get_account('my_account').get_cash()))
+    print(context.get_account('my_account').get_position('600016.SH'))
 
 
-    # i =1
-    # si = str(i).zfill(5)
-    # print( si )
-    # print( int(si) )
+    # 第2天
+    context.set_date('20191118')
+    acct = context.get_account('my_account')
+    order3 = acct.order(symbol='600016.SH', amount=100, order_type=api.Order.ORDER_SHORT)
+    # 交易撮合
+    context.make_deal()
+    print('cash = {0}'.format(context.get_account('my_account').get_cash()))
+    print(context.get_account('my_account').get_position('600016.SH'))
 
+    print(acct.get_value())
+    print(acct.get_order('000003'))
 
+    # # 头寸变动
+    # # amount (price) value_change   |cost     value   profit
+    # # 100    1       100             1*100    100     0
+    # # 100    2       200             300      400     400-300=100
+    # # -100   1                       200      100     -100
+    # p = api.Position('600016.SH')
+    # print(p)
+    # p.change(direct=1, the_amount=100, the_price=1)
+    # print(p)
+    # p.change(direct=1, the_amount=100, the_price=2)
+    # print(p)
+    # p.change(direct=-1, the_amount=100, the_price=1)
+    # print(p)

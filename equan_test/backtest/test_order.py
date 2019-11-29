@@ -42,6 +42,9 @@ class OrderTestCase(api.StrategyCase):
 
 
 class Test_StockOrder(unittest.TestCase):
+    """
+    测试 股票下单功能
+    """
 
     case = None
     context = None
@@ -112,5 +115,10 @@ class Test_StockOrder(unittest.TestCase):
         """
         测试 股票下单，下单数量不是按“手”为单位的情况
         """
-        # TODO 待实现
-        pass
+        acct = self.context.get_account('my_account')
+        order = acct.order(symbol='600016.SH', amount=123,
+                           order_type=api.Order.ORDER_SHORT)
+        # 检查
+        self.assertIsNotNone(order)
+        self.assertEqual(api.OrderState.REJECTED, order.state)     # 状态
+        self.assertEqual("股票单交易数量必须以100为单位(amount=123)", order.state_message)
