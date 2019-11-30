@@ -178,7 +178,7 @@ class Context:
                     # 做空时，仓中股票数量不足的情况
                     log.debug('账户中股票不足可卖出数量，订单撤销！')
                     order.state_message = '持有股票数量不足({0}<{1})，订单撤销！'.format(
-                        acct.get_position(order.symbol_id).available_amount, order.order_amount)
+                        acct.get_position(order.symbol).available_amount, order.order_amount)
                     order.state = OrderState.CANCELED  # 更新order的状态
                 else:
                     log.debug('订单{0} 买卖 {1} {2}份'.format(

@@ -120,8 +120,9 @@ class Test_Make_Deal(unittest.TestCase):
         self.assertEqual(9982.0, acct.get_value())
 
     def test_no_cash(self):
-
-        # TODO 测试，买入钱不够，卖出股票数不够的情况
+        """
+        测试，买入钱不够，卖出股票数不够的情况
+        """
         # 第一天
         self.context.set_date('20191105')
         # 账户下单
@@ -133,11 +134,10 @@ class Test_Make_Deal(unittest.TestCase):
 
         # 检查第一天撮合后情况
         # 各order的情况
-        # order1 = acct.get_order('000004')
         self.assertEqual(api.OrderState.CANCELED, order.state)
         self.assertEqual(0, order.filled_amount)
         self.assertEqual('现金不足', order.state_message[:4])
-        # 各postion情况
+        # 各postion情况，由于未交易成功，则资产postion都为0
         p_600016 = acct.get_position('600016.SH')
         self.assertIsNotNone(p_600016)
         self.assertEqual(0, p_600016.profit)
@@ -149,5 +149,30 @@ class Test_Make_Deal(unittest.TestCase):
         self.assertEqual(acct.capital_base, acct.get_value())
 
     def test_no_position(self):
-        # TODO 测试，没有足够股票卖出的情况
-        pass
+        """
+        测试，没有足够股票卖出的情况
+        """
+        # 第一天
+        self.context.set_date('20191105')
+        # 账户下单，空头寸要卖出
+        acct = self.context.get_account('my_account')
+        order = acct.order(symbol='600016.SH', amount=100,
+                           order_type=api.Order.ORDER_SHORT)
+        # 交易撮合
+        self.context.make_deal()
+
+        # 检查第一天撮合后情况
+        # 各order的情况
+        self.assertEqual(api.OrderState.CANCELED, order.state)
+        self.assertEqual(0, order.filled_amount)
+        self.assertEqual('持有股票数量不足', order.state_message[:8])
+        # 各postion情况，由于未交易成功，则资产postion都为0
+        p_600016 = acct.get_position('600016.SH')
+        self.assertIsNotNone(p_600016)
+        self.assertEqual(0, p_600016.profit)
+        self.assertEqual(0, p_600016.cost)
+        self.assertEqual(0, p_600016.amount)
+        # acct现金账户:
+        self.assertEqual(acct.capital_base, acct.get_cash())
+        # acct的总市价
+        self.assertEqual(acct.capital_base, acct.get_value())
