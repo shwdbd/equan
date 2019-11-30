@@ -25,13 +25,17 @@ class OrderTestCase(api.StrategyCase):
     freq = 'd'
     refresh_rate = 1
 
-    # 资产池
-    universe = api.StockUniverse(['600016.SH', '600320.SH'])
+    universe = None
+    accounts = None
 
-    # 设定账户
-    accounts = {
-        'my_account': api.StockAccount('my_account', capital_base=10000)
-    }
+    def __init__(self):
+        # 资产池
+        self.universe = api.StockUniverse(['600016.SH', '600320.SH'])
+
+        # 设定账户
+        self.accounts = {
+            'my_account': api.StockAccount('my_account', capital_base=10000)
+        }
 
     def initialize(self, context):
         print('策略 初始化')
@@ -49,6 +53,8 @@ class Test_Make_Deal(unittest.TestCase):
     context = None
 
     def setUp(self):
+        self.case = None
+        self.context = None
         self.case = OrderTestCase()
         self.context = api.Context(self.case.accounts, self.case.universe)
         self.context.set_date('20191105')   # 当日股价：6.2
@@ -134,13 +140,13 @@ class Test_Make_Deal(unittest.TestCase):
         # 各postion情况
         p_600016 = acct.get_position('600016.SH')
         self.assertIsNotNone(p_600016)
-        self.assertEqual(-18.0, p_600016.profit)
-        self.assertEqual(629.0, p_600016.cost)
-        self.assertEqual(100, p_600016.amount)
+        self.assertEqual(0, p_600016.profit)
+        self.assertEqual(0, p_600016.cost)
+        self.assertEqual(0, p_600016.amount)
         # acct现金账户:
-        self.assertEqual(9371, acct.get_cash())
+        self.assertEqual(acct.capital_base, acct.get_cash())
         # acct的总市价
-        self.assertEqual(9982.0, acct.get_value())
+        self.assertEqual(acct.capital_base, acct.get_value())
 
     def test_no_position(self):
         # TODO 测试，没有足够股票卖出的情况

@@ -19,20 +19,21 @@ class OrderTestCase(api.StrategyCase):
     """测试用 策略
     """
 
-    start = '20191104'
-    end = '20191105'
-    benchmark = 'HS300'
-    freq = 'd'
-    refresh_rate = 1
+    def __init__(self):
+        self.start = '20191104'
+        self.end = '20191105'
+        self.benchmark = 'HS300'
+        self.freq = 'd'
+        self.refresh_rate = 1
 
-    # 资产池
-    universe = api.StockUniverse(['600016.SH', '600320.SH'])
+        # 资产池
+        self.universe = api.StockUniverse(['600016.SH', '600320.SH'])
 
-    # 设定账户
-    accounts = {
-        'my_account': api.StockAccount('my_account', capital_base=10000)
-    }
-
+        # 设定账户
+        self.accounts = {
+            'my_account': api.StockAccount('my_account', capital_base=10000)
+        }
+        
     def initialize(self, context):
         print('策略 初始化')
 
@@ -53,10 +54,10 @@ class Test_StockOrder(unittest.TestCase):
         self.case = OrderTestCase()
         self.context = api.Context(self.case.accounts, self.case.universe)
         self.context.set_date('20191105')
-
+        
     def tearDown(self):
-        self.case = None
-        self.context = None
+        del(self.case)
+        del(self.context)
 
     def test_order_by_amount(self):
         """
@@ -99,12 +100,13 @@ class Test_StockOrder(unittest.TestCase):
         测试 股票下单，股票id不在资产池内的情况
         """
         acct = self.context.get_account('my_account')
+        
         order = acct.order(symbol='600099.SH', amount=100,
                            order_type=api.Order.ORDER_SHORT)
-
+        
         # 检查
         self.assertIsNotNone(order)
-        self.assertEqual('000003', order.order_id)  # TODO 此处要改进
+        self.assertEqual('000001', order.order_id)  # TODO 此处要改进
         self.assertEqual(0, order.order_price)   # 价格
         self.assertEqual(0, order.order_amount)  # 订单数量
         self.assertEqual(api.OrderState.REJECTED, order.state)     # 状态

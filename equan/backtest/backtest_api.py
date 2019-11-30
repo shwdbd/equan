@@ -166,8 +166,8 @@ class Context:
                 # 交易金额
                 # TODO 撮合时，计算 总成交金额，并更新Order的order_capital项目
                 order_capital = order.order_price * order.order_amount
-                log.debug('成交金额 = {0}, 成交价格={1}'.format(
-                    order_capital, order.order_price))
+                # log.debug('成交金额 = {0}, 成交价格={1}'.format(
+                #     order_capital, order.order_price))
                 # 做多时检查现金账户余额是否足够：
                 if order.direction == Order.ORDER_LONG and acct.get_cash() < order_capital:
                     log.debug('现金不足，订单撤销！')
@@ -208,6 +208,7 @@ class Account:
     """
 
     ATYPE_Stock = 'STOCK'           # 账户类型：股票
+
     name = ''                       # 账户名
     account_type = ''               # 账户类型
     capital_base = 0                # 初始资金
@@ -222,6 +223,11 @@ class Account:
         self.name = name
         self.capital_base = capital_base
         self._cash = self.capital_base  # 现金账户余额初始化
+        self._positions = {}
+        self._orders = [] 
+        self._context = None
+        self._total_value = 0.0
+
 
     def get_value(self):
         """
@@ -353,6 +359,7 @@ class StockAccount(Account):
 
     def __init__(self, name, capital_base):
         super().__init__(name, capital_base)
+        self.account_type = Account.ATYPE_Stock
 
     def order(self, symbol, amount, order_type):
         """[summary]
@@ -418,19 +425,17 @@ class Position:
 
     """
     symbol = ''             # 资产编号
-
     amount = 0              # 当前持仓数量
     available_amount = 0    # 可卖出持仓数量
     cost = 0.0              # 平均开仓成本
     value = 0.0             # 当前持仓市值（随市场价格变动）
-
-    profit = 0.0            # 累计持仓盈亏浮动 = (value - cost)*amount
+    profit = 0.0            # 累计持仓盈亏浮动 = (value - cost)
 
     def __init__(self, symbol):
         self.symbol = symbol
         self.amount = 0              # 持仓数量
         self.available_amount = 0    # 可卖出持仓数量
-        self.profit = 0.0            # 累计持仓盈亏浮动 = (value - cost)*amount
+        self.profit = 0.0            # 累计持仓盈亏浮动
         self.cost = 0.0              # 平均开仓成本
         self.value = 0.0             # 持仓市值（随市场价格变动）
         self.change(1, 0, 0)
