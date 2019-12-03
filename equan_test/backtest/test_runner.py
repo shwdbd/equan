@@ -14,6 +14,10 @@ import unittest
 
 
 class SimpleCase(api.StrategyCase):
+    '''
+    单元测试用 简单策略
+    '''
+
     start = '20190101'
     end = '20190103'
     benchmark = 'HS300'
