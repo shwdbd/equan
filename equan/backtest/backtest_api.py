@@ -172,7 +172,6 @@ class Context:
             for order in open_orders:
                 # 按账户进行撮合
                 # 交易金额
-                # TODO 撮合时，计算 总成交金额，并更新Order的order_capital项目
                 order_capital = order.order_price * order.order_amount
                 # log.debug('成交金额 = {0}, 成交价格={1}'.format(
                 #     order_capital, order.order_price))
@@ -186,7 +185,7 @@ class Context:
                     # 做空时，仓中股票数量不足的情况
                     log.debug('账户中股票不足可卖出数量，订单撤销！')
                     order.state_message = '持有股票数量不足({0}<{1})，订单撤销！'.format(
-                        acct.get_position(order.symbol_id).available_amount, order.order_amount)
+                        acct.get_position(order.symbol).available_amount, order.order_amount)
                     order.state = OrderState.CANCELED  # 更新order的状态
                 else:
                     log.debug('订单{0} 买卖 {1} {2}份'.format(
@@ -195,7 +194,7 @@ class Context:
                     # TODO 此处要实现 事务处理
                     # 现金账户扣减
                     acct.update_cash(-1*order.direction*order_capital)
-                    # 得到Position账户， TODO 改成工厂方法
+                    # 得到Position账户
                     position = acct.get_position(order.symbol)
                     if not position:
                         position = Position(symbol=order.symbol)
@@ -327,12 +326,6 @@ class Account:
         Returns:
             [Order对象] -- 下单成功返回对象，否则抛出不同的异常
         """
-        # EFFECTS:
-        # 1. 参数检查（检查symbol、order_type有效性、检查amount是否满足手的单位要求）
-        # 2. 生成order对象
-        # END
-
-        # TODO 待实现
         raise NotImplementedError
 
     def order_pct(symbol, pct):
@@ -359,9 +352,6 @@ class Account:
 class StockAccount(Account):
     """
     股票账户
-
-    Arguments:
-        Account {[type]} -- [description]
     """
     account_type = Account.ATYPE_Stock
 
