@@ -30,6 +30,8 @@ class StrategyCase:
     refresh_rate = 1				 # 执行handle_data的时间间隔，目前只支持int日期，不支持weekly、Monthly的写法
     max_history_window = 100         # 回溯数据窗口（单位：天），默认100天
 
+    __context = None
+
     accounts = {}					 # 账户的字典集合
     # 按账户名进行存放，如 'my_account' : Account(fdsafdsa)
 
@@ -54,6 +56,12 @@ class StrategyCase:
         """
 
         raise NotImplementedError
+
+    def get_context(self):
+        return self.__context
+
+    def set_context(self, the_context):
+        self.__context = the_context
 
 
 class Context:

@@ -29,6 +29,7 @@ class StrategyRunner:
         # 加载数据
         # 加载Account、Universe
         context = api.Context(case_obj.accounts, case_obj.universe)
+        case_obj.set_context(context)
 
         # 策略初始化
         case_obj.initialize(context)
