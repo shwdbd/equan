@@ -1,9 +1,10 @@
 {
-    "python.pythonPath": "C:\\Python\\workspace\\equan\\venv\\equan\\Scripts\\python.exe",
+    // "python.pythonPath": "C:\\Python\\workspace\\equan\\venv\\equan\\Scripts\\python.exe",
+    "python.pythonPath": "C:\\Python\\venv\\equan\\Scripts\\python.exe",
     "python.testing.unittestArgs": [
         "-v",
         "-s",
-        ".",
+        "test\\.",
         "-p",
         "test_*.py"
     ],
