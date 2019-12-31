@@ -222,7 +222,7 @@ class Account:
     账户类
     """
 
-    ATYPE_Stock = 'STOCK'           # 账户类型：股票
+    ATYPE_STOCK = 'STOCK'           # 账户类型：股票
 
     name = ''                       # 账户名
     account_type = ''               # 账户类型
@@ -239,7 +239,7 @@ class Account:
         self.capital_base = capital_base
         self._cash = self.capital_base  # 现金账户余额初始化
         self._positions = {}
-        self._orders = [] 
+        self._orders = []
         self._context = None
         self._total_value = 0.0
 
@@ -289,7 +289,7 @@ class Account:
             position = Position(symbol=symbol_id)
             self.get_positions()[symbol_id] = position
         return self._positions[symbol_id]
-        
+
     def get_orders(self, state=None):
         """
         返回账户所有订单，返回list
@@ -360,11 +360,11 @@ class StockAccount(Account):
     """
     股票账户
     """
-    account_type = Account.ATYPE_Stock
+    account_type = Account.ATYPE_STOCK
 
     def __init__(self, name, capital_base):
         super().__init__(name, capital_base)
-        self.account_type = Account.ATYPE_Stock
+        self.account_type = Account.ATYPE_STOCK
 
     def order(self, symbol, amount, order_type):
         """[summary]
@@ -552,7 +552,7 @@ class Universe:
     资产池基类
     """
 
-    symbol_ids = []  # 资产编号集合
+    _symbol_ids = []  # 资产编号集合
 
     def get_symbols(self, date):
         """
@@ -566,16 +566,25 @@ class Universe:
 
 class StockUniverse(Universe):
     """
-    动态股票资产池
+    静态股票资产池
     """
 
     def __init__(self, stock_list):
-        self.symbol_ids = stock_list
+        self._symbol_ids = stock_list
 
     def get_symbols(self, date):
+        """[summary]
+        
+        Arguments:
+            date {[type]} -- [description]
+        
+        Returns:
+            [type] -- [description]
+        """
+
         # 静态池，不受到影响
         # FIXME 需要剔除当天停牌的股票
-        return self.symbol_ids
+        return self._symbol_ids
 
 
 class DynamicStockIndexUniverse(Universe):
