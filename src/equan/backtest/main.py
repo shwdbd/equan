@@ -12,7 +12,7 @@ import equan.backtest.backtest_api as api
 from equan.backtest.tl import log
 
 
-class MyCase(api.StrategyCase):
+class MyCase(api.BaseStrategy):
     start = '20190101'
     end = '20190107'
     benchmark = 'HS300'
@@ -40,7 +40,7 @@ class MyCase(api.StrategyCase):
         # 策略：40%资金买民生银行，60%资金买五粮液
 
 
-class OrderTestCase(api.StrategyCase):
+class OrderTestCase(api.BaseStrategy):
     start = '20191104'
     end = '20191105'
     benchmark = 'HS300'

@@ -7,6 +7,11 @@
 @Version :   1.0
 @Contact :   shwangjj@163.com
 @Desc    :   回测项目的通用工具集合
+
+目前提供：
+1. 日志
+2. tushare数据访问api
+
 '''
 import logging.config
 import tushare as ts

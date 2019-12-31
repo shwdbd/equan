@@ -15,7 +15,7 @@ import equan.backtest.backtest_api as api
 # from equan.backtest.tl import log
 
 
-class OrderTestCase(api.StrategyCase):
+class OrderTestCase(api.BaseStrategy):
     """测试用 策略
     """
 

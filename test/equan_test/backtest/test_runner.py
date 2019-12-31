@@ -13,7 +13,7 @@ import equan.backtest.runner as runner
 import unittest
 
 
-class SimpleCase(api.StrategyCase):
+class SimpleCase(api.BaseStrategy):
     '''
     单元测试用 简单策略
     '''

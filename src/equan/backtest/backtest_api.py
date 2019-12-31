@@ -7,15 +7,23 @@
 @Version :   1.0
 @Contact :   shwangjj@163.com
 @Desc    :   回测API
+
+主要类说明:
+1. StrategyCase             策略基类
+2. Context                  策略执行环境
+3. Account, StockAccount    账户类，股票账户子类
+4. Position                 头寸类
+5. Order                    订单类
+6. OrderState               订单状态
+7. Universe, StockUniverse  资产池，股票资产池
+8. DynamicStockIndexUniverse    动态股票资产池
+
 '''
-# import datetime
-# import time
 import equan.backtest.biz_tools as bt
 from equan.backtest.tl import log, tushare
-# import pandas as pd
 
 
-class StrategyCase:
+class BaseStrategy:
     """
     策略的基类，每个策略都继承于这个类
     """
@@ -234,7 +242,6 @@ class Account:
         self._orders = [] 
         self._context = None
         self._total_value = 0.0
-
 
     def get_value(self):
         """
