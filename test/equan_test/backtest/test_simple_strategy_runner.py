@@ -11,6 +11,12 @@
 测试最简单的策略执行情况，重点在测试Runner情况，非具体的下单等操作
 - 无下单动作
 
+检查的内容：
+- context
+- account
+- account.position
+- account.order
+
 
 
 '''
@@ -84,6 +90,10 @@ class Test_SimpleStrategyRun(unittest.TestCase):
         self.assertEquals('20191105', case.result['initialize']['strategy.end'])
         self.assertEquals('HS300', case.result['initialize']['strategy.benchmark'])
 
+        # 检查资产池
+        self.assertIsInstance(case.universe, model.Universe)
+        self.assertListEqual(['600016.SH', '600320.SH'], case.universe.get_symbols(''))
+
         # 每日执行：
         self.assertEqual(2, len(case.result['handle_data']))  # 总执行2个交易日
         # 自然日，非交易日，不能被调用：
@@ -102,5 +112,10 @@ class Test_SimpleStrategyRun(unittest.TestCase):
         self.assertIsNotNone(acct)
         self.assertEqual(10000, acct.get_value())   # 市值应等于初始金额
         self.assertEqual(10000, acct.get_cash())
-        self.assertEqual(0, len(acct.get_positions()))
+        # 检查头寸和订单
+        self.assertEqual(0, len(acct.get_positions()))  # 无头寸，无订单
         self.assertEqual(0, len(acct.get_orders()))
+        # 检查历史头寸
+        
+        # TODO 检查策略结果的输出
+        

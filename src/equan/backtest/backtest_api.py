@@ -388,6 +388,9 @@ class StockAccount(Account):
 
     def order(self, symbol, amount, order_type):
         """[summary]
+        股票下单
+
+        - 必须按"手"为单位下单
 
         Arguments:
             symbol {[type]} -- [description]
@@ -601,9 +604,7 @@ class StockUniverse(Universe):
         Returns:
             [type] -- [description]
         """
-
-        # 静态池，不受到影响
-        # FIXME 需要剔除当天停牌的股票
+        # FIXME 需要剔除当天停牌的股票（下一个版本考虑）
         return self._symbol_ids
 
 
