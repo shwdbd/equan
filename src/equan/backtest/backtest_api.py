@@ -29,26 +29,25 @@ class BaseStrategy:
     """
 
     # 全局变量：
+    name = '无名策略'                 # 策略名称
     start = ''                       # 回测起始时间，yyyyMMdd格式
     end = ''                         # 回测结束时间，yyyyMMdd格式
-    name = ''                        # 策略名称
     universe = None					 # 资产池
-    benchmark = ''					 # str，事先算好的benchmark收益率数据
+    benchmark = 'HS300'			     # str，事先算好的benchmark收益率数据
     freq = 'd'					     # 策略执行频率，目前只支持d日频率回测
     refresh_rate = 1				 # 执行handle_data的时间间隔，目前只支持int日期，不支持weekly、Monthly的写法
     max_history_window = 100         # 回溯数据窗口（单位：天），默认100天
 
-    __context = None
+    _context = None                  # 运行环境
 
     accounts = {}					 # 账户的字典集合
     # 按账户名进行存放，如 'my_account' : Account(fdsafdsa)
 
     def initialize(self, context):
-        """
-        初始化策略运行环境(本函数必须被策略子类实现)
+        """初始化策略运行环境(本函数必须被策略子类实现)
 
         Arguments:
-            context {[type]} -- [description]
+            context {Context} -- 运行时环境
 
         Raises:
             NotImplementedError: [description]
@@ -66,10 +65,20 @@ class BaseStrategy:
         raise NotImplementedError
 
     def get_context(self):
-        return self.__context
+        """返回运行环境
+
+        Returns:
+            [type] -- [description]
+        """
+        return self._context
 
     def set_context(self, the_context):
-        self.__context = the_context
+        """设置运行环境
+
+        Arguments:
+            the_context {[type]} -- [description]
+        """
+        self._context = the_context
 
 
 class Context:
@@ -87,7 +96,9 @@ class Context:
     today = None            # 当前日期, str(yyyyMMdd)格式
     previous_date = None    # 前一交易日, str(yyyyMMdd)格式
 
-    def __init__(self, accounts, universe):
+    _strategy = None        # 对于策略对象的引用
+
+    def __init__(self, strategy_obj):
         """
         初始化策略运行环境
 
@@ -101,12 +112,13 @@ class Context:
             accounts {[type]} -- [description]
         """
         log.debug('初始化Context')
+        self._strategy = strategy_obj
 
         # 资产池,根据日期，计算当日的资产列表
-        self._universe = universe
+        self._universe = strategy_obj.universe
 
         # 账户配置：
-        self._accounts = accounts
+        self._accounts = strategy_obj.accounts
         for acct in self.get_accounts():
             acct.set_context(self)
 
@@ -114,6 +126,12 @@ class Context:
         self.now = ""
         self.today = ""
         self.previous_date = ""
+
+    def get_strategy(self):
+        """
+        返回策略对象
+        """
+        return self._strategy
 
     def set_date(self, day_str):
         """
@@ -173,9 +191,11 @@ class Context:
         # rule1： 如果现金不足，则全单失败！
         # END
 
-        log.debug('开始{0}的交易撮合'.format(self.today))
+        log.debug('[{0}]开始{1}的交易撮合'.format(
+            self.get_strategy().name, self.today))
         for acct in self.get_accounts():
-            log.debug('撮合账户{0}:'.format(acct.name))
+            log.debug('[{0}]撮合账户{1}:'.format(
+                self.get_strategy().name, acct.name))
             open_orders = acct.get_orders(state=OrderState.OPEN)
             for order in open_orders:
                 # 按账户进行撮合
@@ -335,7 +355,7 @@ class Account:
         """
         raise NotImplementedError
 
-    def order_pct(symbol, pct):
+    def order_pct(self, symbol, pct):
         """
         根据当前账户总资产，进行策略订单委托下单指定百分比的股票仓位。
 
@@ -574,10 +594,10 @@ class StockUniverse(Universe):
 
     def get_symbols(self, date):
         """[summary]
-        
+
         Arguments:
             date {[type]} -- [description]
-        
+
         Returns:
             [type] -- [description]
         """
