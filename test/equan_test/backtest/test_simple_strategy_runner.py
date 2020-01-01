@@ -113,9 +113,10 @@ class Test_SimpleStrategyRun(unittest.TestCase):
         self.assertEqual(10000, acct.get_value())   # 市值应等于初始金额
         self.assertEqual(10000, acct.get_cash())
         # 检查头寸和订单
-        self.assertEqual(0, len(acct.get_positions()))  # 无头寸，无订单
-        self.assertEqual(0, len(acct.get_orders()))
-        # 检查历史头寸
+        self.assertEqual(1, len(acct.get_positions()))  # 仅现金头寸
+        self.assertEqual('CASH', acct.get_position('CASH').symbol)
+        self.assertEqual(0, len(acct.get_orders()))     # 无订单
+        # TODO 检查历史头寸
         
         # TODO 检查策略结果的输出
         

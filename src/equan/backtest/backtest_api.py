@@ -20,7 +20,8 @@
 
 '''
 import equan.backtest.biz_tools as bt
-from equan.backtest.tl import log, tushare
+from equan.backtest.tl import log
+import equan.backtest.data_api as data_api
 
 
 class BaseStrategy:
@@ -183,7 +184,7 @@ class Context:
 
     def make_deal(self):
         """
-        撮合今天交易
+        撮合今日交易
         """
         # 1. 找出所有账户、所有OPEN状态的Order
         # 2. 进行购买/卖出操作（操作Poistion和Cash）
@@ -191,51 +192,52 @@ class Context:
         # rule1： 如果现金不足，则全单失败！
         # END
 
-        log.debug('[{0}]开始{1}的交易撮合'.format(
-            self.get_strategy().name, self.today))
+        log.debug('[{0}]开始 {1} 的交易撮合'.format(self.get_strategy().name, self.today))
         for acct in self.get_accounts():
-            log.debug('[{0}]撮合账户{1}:'.format(
-                self.get_strategy().name, acct.name))
             open_orders = acct.get_orders(state=OrderState.OPEN)
-            for order in open_orders:
-                # 按账户进行撮合
-                # 交易金额
-                order_capital = order.order_price * order.order_amount
-                # log.debug('成交金额 = {0}, 成交价格={1}'.format(
-                #     order_capital, order.order_price))
-                # 做多时检查现金账户余额是否足够：
-                if order.direction == Order.ORDER_LONG and acct.get_cash() < order_capital:
-                    log.debug('现金不足，订单撤销！')
-                    order.state_message = '现金不足({0}<{1})，订单撤销！'.format(
-                        acct.get_cash(), order_capital)
-                    order.state = OrderState.CANCELED  # 更新order的状态
-                elif order.direction == Order.ORDER_SHORT and (acct.get_position(order.symbol).available_amount < order.order_amount):
-                    # 做空时，仓中股票数量不足的情况
-                    log.debug('账户中股票不足可卖出数量，订单撤销！')
-                    order.state_message = '持有股票数量不足({0}<{1})，订单撤销！'.format(
-                        acct.get_position(order.symbol).available_amount, order.order_amount)
-                    order.state = OrderState.CANCELED  # 更新order的状态
-                else:
-                    # 交易成功
-                    log.debug('订单{0} 买卖 {1} {2}份'.format(
-                        order.order_id, order.symbol, order.order_amount))
+            if len(open_orders) == 0:
+                log.debug('[{0}]撮合账户 {1} ，无订单'.format(self.get_strategy().name, acct.name))
+            else:
+                log.debug('[{0}]撮合账户 {1} ，{2} 个订单'.format(self.get_strategy().name, acct.name, len(open_orders)))        
+                for order in open_orders:
+                    order_capital = order.order_price * order.order_amount  # 交易金额
 
-                    # TODO 此处要实现 事务处理
-                    # 现金账户扣减
-                    acct.update_cash(-1 * (order.direction * order_capital))
-                    # 得到Position账户
-                    position = acct.get_position(order.symbol)
-                    if not position:
-                        position = Position(symbol=order.symbol)
-                        acct.get_positions()[order.symbol] = position
+                    log.debug('撮合订单 {0}'.format(order))
+                    if order.direction == Order.ORDER_LONG and acct.get_cash() < order_capital:
+                        # 做多时检查现金账户余额是否足够：
+                        log.debug('现金不足，订单撤销！')
+                        order.state_message = '现金不足({0}<{1})，订单撤销！'.format(
+                            acct.get_cash(), order_capital)
+                        order.state = OrderState.CANCELED  # 更新order的状态
+                    elif order.direction == Order.ORDER_SHORT and (acct.get_position(order.symbol).available_amount < order.order_amount):
+                        # 做空时，仓中股票数量不足的情况
+                        log.debug('账户中股票不足可卖出数量，订单撤销！')
+                        order.state_message = '持有股票数量不足({0}<{1})，订单撤销！'.format(
+                            acct.get_position(order.symbol).available_amount, order.order_amount)
+                        order.state = OrderState.CANCELED  # 更新order的状态
+                    else:
+                        # 成功撮合：
+                        # TODO 此处要实现 事务处理
+                        # 现金账户扣减
+                        acct.update_cash(-1 * (order.direction * order_capital))
+                        # 得到Position账户
+                        position = acct.get_position(order.symbol)
+                        if not position:
+                            position = Position(symbol=order.symbol)
+                            acct.get_positions()[order.symbol] = position
 
-                    position = acct.get_positions()[order.symbol]
-                    position.change(
-                        direct=order.direction, the_amount=order.order_amount, the_price=order.order_price)
+                        position = acct.get_positions()[order.symbol]
+                        position.change(
+                            direct=order.direction, the_amount=order.order_amount, the_price=order.order_price)
 
-                    # 交易成功,更新order的filled_amount
-                    order.filled_amount = order.order_amount    # 订单成交数量
-                    order.state = OrderState.FILLED
+                        # 交易成功,更新order的filled_amount
+                        order.filled_amount = order.order_amount    # 订单成交数量
+                        order.state = OrderState.FILLED
+
+                        # 交易成功
+                        log.debug('订单{0} 成功 买卖 {1} {2}份！'.format(
+                            order.order_id, order.symbol, order.order_amount))
+        log.debug('[{0}]{1} 交易撮合结束 '.format(self.get_strategy().name, self.today))
 
     def finish_tick(self):
         """
@@ -245,6 +247,17 @@ class Context:
         - 策略效果计算
         
         """
+        log.debug('[{0}]{1} 日终数据处理 '.format(self.get_strategy().name, self.today))
+        for acct in self.get_accounts():
+            acct._his_positions[self.today] = acct.get_positions()
+            
+
+
+        # TODO 待实现 position 存入历史
+
+
+        # TODO 待实现 策略的收益计算
+        log.debug('[{0}]{1} 日终数据处理结束 '.format(self.get_strategy().name, self.today))
 
 
 class Account:
@@ -264,14 +277,21 @@ class Account:
     _context = None                 # 对环境的引用
     _total_value = 0.0              # 总价值
 
+    # 历史头寸 {key是日期}
+    _his_positions = {}
+
     def __init__(self, name, capital_base):
         self.name = name
         self.capital_base = capital_base
-        self._cash = self.capital_base  # 现金账户余额初始化
         self._positions = {}
         self._orders = []
         self._context = None
-        self._total_value = 0.0
+        self._total_value = capital_base    # 初始总市价等于初始资金
+
+        self._cash = self.capital_base  # 现金账户余额初始化
+        cash_position = Position('CASH')
+        cash_position.change(1, capital_base, 1)    # 初始资金全部换成现金
+        self.get_positions()['CASH'] = cash_position
 
     def get_value(self):
         """
@@ -281,7 +301,8 @@ class Account:
         for symbol, position in self.get_positions().items():
             total_value += position.value
 
-        return self.get_cash() + total_value
+        return total_value
+        # return self.get_cash() + total_value
 
     def set_context(self, context):
         self._context = context
@@ -410,19 +431,19 @@ class StockAccount(Account):
         Returns:
             [type] -- [description]
         """
-        log.debug('股票账户{0}下单'.format(self.name))
+        log.debug('股票账户{0}下单, symbol={1}, amount={2}, order_type={3}'.format(self.name, symbol, amount, order_type))
 
         order = Order(symbol, self)
         try:
+            # 检查amount是否是100的倍数或是0，否则订单状态就是 REJECTED
             if amount != 0 and amount % 100 != 0:
-                # 检查amount是否是100的倍数或是0，否则订单状态就是 REJECTED
                 order.state = OrderState.REJECTED
-                order.state_message = '股票单交易数量必须以100为单位(amount={0})'.format(
+                order.state_message = '订单被拒绝，原因：股票单交易数量必须以100为单位(amount={0})'.format(
                     amount)
             elif symbol not in self.get_context().get_universe():
                 # 检查symbol是否在资产池中，不在则状态为  REJECTED
                 order.state = OrderState.REJECTED
-                order.state_message = '股票{0}不在可交易的资产池中，不能下单'.format(symbol)
+                order.state_message = '订单被拒绝，原因：股票{0}不在可交易的资产池中，不能下单'.format(symbol)
             else:
                 # 正常下单:
                 order.order_amount = amount
@@ -432,12 +453,9 @@ class StockAccount(Account):
                 else:
                     order.offset_flag = 'close'
 
-                # 按当日open价格计算委托价格
-                # TODO 考虑数据取不到的情况
-                # TODO 取数据要简化
-                open_price = float(tushare.daily(
-                    ts_code='600016.SH', trade_date=self.get_context().today)['open'])
-                order.order_price = open_price
+                # 按前一日收盘价计算委托价格
+                the_price = data_api.stock_price(order.symbol, self.get_context().previous_date, 'close')
+                order.order_price = the_price
 
                 # TODO ？怎么判断，开平仓标识
                 order.state = OrderState.OPEN
@@ -447,6 +465,7 @@ class StockAccount(Account):
             order.state_message = '系统异常:' + str(sys_e)
         finally:
             self._orders.append(order)
+            log.debug('下单完成, order_id={0}, 状态={1}, 价格={2}'.format(order.order_id, order.state, order.order_price))
             return order
 
         return order

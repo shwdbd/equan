@@ -28,9 +28,10 @@ class StockOrderStrategy(model.BaseStrategy):
     """
 
     def __init__(self):
-        self.name = '股票下单'
+        self.name = '股票下单策略'
         self.start = '20191103'
-        self.end = '20191108'
+        # self.end = '20191108'
+        self.end = '20191105'
         self.benchmark = 'HS300'
         self.freq = 'd'
         self.refresh_rate = 1
@@ -55,15 +56,15 @@ class StockOrderStrategy(model.BaseStrategy):
         elif context.today == '20191105':
             acct = context.get_account('stock_A')
             acct.order('600016.SH', 100, -1)   # 卖出
-        elif context.today == '20191106':   # 买10股（失败，拒绝）
-            acct = context.get_account('stock_A')
-            acct.order('600016.SH', 10, 1)
-        elif context.today == '20191107':   # 买浦发银行（失败，拒绝）
-            acct = context.get_account('stock_A')
-            acct.order('600999.SH', 100, 1)
-        elif context.today == '20191108':   # 买民生银行，通讯失败(系统错误)
-            acct = context.get_account('stock_A')
-            acct.order('600016.SH', 10, 1)  # TODO 此处要做特殊处理，形成通讯失败的情况
+        # elif context.today == '20191106':   # 买10股（失败，拒绝）
+        #     acct = context.get_account('stock_A')
+        #     acct.order('600016.SH', 10, 1)
+        # elif context.today == '20191107':   # 买浦发银行（失败，拒绝）
+        #     acct = context.get_account('stock_A')
+        #     acct.order('600999.SH', 100, 1)
+        # elif context.today == '20191108':   # 买民生银行，通讯失败(系统错误)
+        #     acct = context.get_account('stock_A')
+        #     acct.order('600016.SH', 10, 1)  # TODO 此处要做特殊处理，形成通讯失败的情况
 
 
 if __name__ == "__main__":
@@ -73,6 +74,11 @@ if __name__ == "__main__":
     runner.back_test_run(case)
 
     # 检查：
+    # 第一天，买入
+    # TODO 缺 历史position，无法进行追溯
     acct = case.get_context().get_account('stock_A')
-    print('cash = {0}'.format(acct.get_cash()))
-    print('民生银行 = {0}'.format(acct.get_position('600016.SH')))
+    # print('cash = {0}'.format(acct.get_cash()))
+    # print('民生银行 = {0}'.format(acct.get_position('600016.SH')))
+    print(acct._his_positions['20191105']['600016.SH'])
+
+    # ! 添加Cash头寸对象
