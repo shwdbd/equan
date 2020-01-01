@@ -20,6 +20,8 @@ class StrategyRunner:
 
     @staticmethod
     def back_test_run(case_obj):
+
+
         # 运行策略实例
 
         if not case_obj or not issubclass(type(case_obj), api.BaseStrategy):
@@ -47,6 +49,7 @@ class StrategyRunner:
             context.make_deal()
 
             # 统计汇总
+            context.finish_tick()
             # 发送交易信号微信等
         # 所有日期策略执行结束后，统计输出策略结果
 

@@ -216,12 +216,13 @@ class Context:
                         acct.get_position(order.symbol).available_amount, order.order_amount)
                     order.state = OrderState.CANCELED  # 更新order的状态
                 else:
+                    # 交易成功
                     log.debug('订单{0} 买卖 {1} {2}份'.format(
                         order.order_id, order.symbol, order.order_amount))
 
                     # TODO 此处要实现 事务处理
                     # 现金账户扣减
-                    acct.update_cash(-1*order.direction*order_capital)
+                    acct.update_cash(-1 * (order.direction * order_capital))
                     # 得到Position账户
                     position = acct.get_position(order.symbol)
                     if not position:
@@ -235,6 +236,15 @@ class Context:
                     # 交易成功,更新order的filled_amount
                     order.filled_amount = order.order_amount    # 订单成交数量
                     order.state = OrderState.FILLED
+
+    def finish_tick(self):
+        """
+        回测周期结束处理
+
+        - 头寸转历史
+        - 策略效果计算
+        
+        """
 
 
 class Account:
@@ -342,7 +352,7 @@ class Account:
         - 目前仅支持市价单（即按市场价成交）
 
 
-        order_type = 'open/close' 按当前开盘价或收盘价交易
+        order_type = '1/-1' 交易方向，即买卖
         amount 交易手术，必须是100的整数或者0
 
         Arguments:
@@ -491,7 +501,7 @@ class Position:
         self.value = self.amount * the_price    # 市场价
 
         # 平均成本：
-        self.cost = self.cost + direct * (the_amount*the_price)
+        self.cost = self.cost + direct * (the_amount*the_price) # TODO 计算错误，应是每单位的买入价格
         # 收益
         self.profit = self.value - self.cost
 

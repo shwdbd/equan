@@ -6,72 +6,58 @@
 @Author  :   Jeffrey Wang
 @Version :   1.0
 @Contact :   shwangjj@163.com
-@Desc    :   处理处理代码
+@Desc    :   数据访问接口
+
+1. TODO 取得某股票某时点的价格
+
 '''
-import datetime
-import time
-import equan.backtest.biz_tools as bt
 from equan.backtest.tl import log, tushare
-import pandas as pd
 
 
-class HistoryDataAPI:
+def stock_price(symbol, trade_date, price_type='open'):
     """
-    历史数据调用类
+    查询股票价格
+
+    如出现网络中断等问题，记录error日志，返回None
+
+    Arguments:
+        symbol {str|list} -- tushare格式的股票代码，如 000001.SZ
+                             可使用list查询多个股票
+        trade_date {yyyyMMdd} -- 交易日期
+
+    Keyword Arguments:
+        price_type {str} -- 价格种类 (default: {'open'})，可以取值范围：open|high|low|close
+
+    Returns:
+        [price:float] -- 价格
     """
+    try:
+        legal_price_type = ['open', 'high', 'low', 'close']
+        if price_type not in legal_price_type:
+            log.error('无效的价格类型{0}'.format(price_type))
+            return None
 
-    SAT = 'SAT'  # symbol为key，字段为index，日期为col
-    TAS = 'TAS'  # 日期为key，字段为index，symbol为col
-    TSA = 'TSA'  # 日期为key，symbol为index，字段为col
+        # 调用tushare查询
+        if isinstance(symbol, str):
+            price_df = tushare.daily(ts_code=symbol, trade_date=trade_date)
+            if price_df is None or price_df.empty:
+                log.error('无效的股票代码{0}或无效的数据日期{1}'.format(symbol, trade_date))
+                return None
+            price = price_df[price_type][0]
+            return price
+        elif isinstance(symbol, list):
+            result_dict = {}
+            for stock_id in symbol:
+                df = tushare.daily(ts_code=stock_id, trade_date=trade_date)
+                if df is None or df.empty:
+                    log.error('无效的股票代码{0}或无效的数据日期{1}'.format(
+                        stock_id, trade_date))
+                    return None
+                result_dict[stock_id] = df[price_type][0]
+            return result_dict
+        else:
+            return None
 
-    def get_history(self, symbol, date_limit, fields=['open', 'close'], date_range=1, freq='1d', style='sat'):
-        """
-        获取历史数据
-
-        - 只返回 context.previous_date 之前日期的数据（含previous_date）
-        - attribute 返回的字段可以有：open, close
-        - style类似优矿，有三种模式可以返回选择
-
-        Arguments:
-            symbol {str or list} -- 股票代码或代码列表，格式如：600016.SSE
-            date_limit {日期str} -- 数据最晚的一天日期（含）
-
-        Keyword Arguments:
-            fields {list of str} -- 返回数据的字段 (default: {['open', 'close']})
-            date_range {int} -- 回溯的天数（交易日） [description] (default: {1})
-            freq {str} -- [description] (default: {'1d'})
-            style {str} -- 返回数据格式 (default: {'sat'})
-
-        Returns:
-            [type] -- 特定格式的字典
-        """
-
-        data = {}  # 返回数据包
-        if style.upper() == HistoryDataAPI.TSA:
-            # TSA模式，日期为key，symbol为index，字段为col
-
-            # 按日期从tushare取数据
-            # date_list = pd.date_range(end=date_limit, periods=date_range).strftime('%Y%m%d').tolist()
-            date_list = bt.Trade_Cal.date_range(
-                end=date_limit, periods=date_range)
-            print(date_list)
-
-            for date in date_list:
-                print(date)
-                df = tushare.daily( ts_code=['600016.SH', '600030.SH'], trade_date=date, fields=fields)    # index是股票代码
-                # print(df.head())
-                data[date] = df
-
-        return data
-
-
-if __name__ == "__main__":
-    data_api = HistoryDataAPI()
-
-    symbol = ['600016', '600030']
-    fields = ''
-    max_history_window = 5    # 缓存前置的数据天数
-    data = data_api.get_history(symbol=symbol, date_limit='20190101',
-                                style=HistoryDataAPI.TSA, date_range=(1+max_history_window))
-    print(data)
-    print(data['20181227'])
+    except Exception as err:
+        log.error('查询股票价格错误 {0}'.format(str(err)))
+        return None
