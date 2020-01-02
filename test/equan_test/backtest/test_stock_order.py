@@ -12,6 +12,7 @@
 import unittest
 import equan.backtest.backtest_api as model
 from equan.backtest.runner import StrategyRunner
+import equan.backtest.constant as CONSTANT
 
 
 class StockOrderStrategy(model.BaseStrategy):
@@ -78,42 +79,71 @@ class test_Stock_Order(unittest.TestCase):
         runner = StrategyRunner()
         runner.back_test_run(case)
 
-        # 检查:
-        # Order清单
-        # 1. order 有两个，
+        stock_id = '600016.SH'
+
         acct = case.get_context().get_account('stock_A')
-        # 第1天买入Order
+
+        # 检查Account:
+        self.assertEqual(10001, acct.get_cash())
+        self.assertEqual(10001, acct.get_value())
+
+        # 检查 订单 Order
+        # 共有两个订单：
+        self.assertEqual(2, len(acct.get_orders(state=model.OrderState.FILLED)))
+        # 订单1， 第1天买入100股
         order_buy = acct.get_order('20191104-000001')
         self.assertIsNotNone(order_buy)
-        self.assertEqual(model.OrderState.FILLED, order_buy.state)  # order 状态
-        # 第2天卖出Order
-        # print(order_buy)
-        order_sell = acct.get_order('20191105-000002')    # TODO order id 同设计文档不同
+        self.assertEqual(stock_id, order_buy.symbol)
+        self.assertEqual('20191104 000000', order_buy.order_time)
+        self.assertEqual(100, order_buy.order_amount)   # 委托数量
+        self.assertEqual(100, order_buy.filled_amount)   # 成交数量
+        self.assertEqual(6.18, order_buy.order_price)   # 委托价格
+        self.assertEqual(CONSTANT.ORDER_DIRECTION_LONG, order_buy.direction)    # 买卖方向
+        self.assertEqual('open', order_buy.offset_flag)    # 买卖方向
+        # 订单2， 第2天卖出100股
+        order_sell = acct.get_order('20191105-000002')
         self.assertIsNotNone(order_sell)
-        self.assertEqual(model.OrderState.FILLED, order_sell.state)  # order 状态
+        self.assertEqual(stock_id, order_sell.symbol)
+        self.assertEqual('20191105 000000', order_sell.order_time)
+        self.assertEqual(100, order_sell.order_amount)   # 委托数量
+        self.assertEqual(100, order_sell.filled_amount)   # 成交数量
+        self.assertEqual(6.19, order_sell.order_price)   # 委托价格
+        self.assertEqual(CONSTANT.ORDER_DIRECTION_SHORT, order_sell.direction)    # 买卖方向
+        self.assertEqual('close', order_sell.offset_flag)    # 买卖方向
 
-        # Position 即刻：
-        # 1. cash
-        # 2. 600016 已空        
-        # 最终账户市值
+        # 检查即时Position：
+        # 共有两个Position:
+        self.assertEqual(2, len(acct.get_positions()))
+        # 检查Cash头寸
+        p_cash = acct.get_position('CASH')
+        self.assertIsNotNone(p_cash)
+        cash = 10000-6.18*100+6.19*100
+        self.assertEqual(cash, p_cash.amount)    # 数量为0
+        self.assertEqual(cash, p_cash.available_amount)
+        self.assertEqual(cash, p_cash.value)     # 市值为0
+        # 检查股票头寸
+        p_600016 = acct.get_position('600016.SH')
+        self.assertIsNotNone(p_600016)
+        self.assertEqual(0, p_600016.amount)    # 数量为0
+        self.assertEqual(0, p_600016.available_amount)
+        self.assertEqual(0, p_600016.value)     # 市值为0
 
-        # 历史position
-
+        # 检查汇总表
 
     # def test_error_unit(self):
     #     """
     #     股票账户下单不按手为单位 [反例]
     #     """
-    #     pass    
-
+    #     pass
+    #
     # def test_error_universe(self):
     #     """
     #     股票账户下单，股票id不在资产池中 [反例]
     #     """
-    #     pass    
-
+    #     pass
+    #
     # def test_cant_get_data(self):
     #     """
     #     股票账户获取股价数据失败 [反例]
     #     """
-    #     pass   
+    #     pass

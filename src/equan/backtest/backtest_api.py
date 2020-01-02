@@ -22,6 +22,8 @@
 import equan.backtest.biz_tools as bt
 from equan.backtest.tl import log
 import equan.backtest.data_api as data_api
+# import equan.backtest.constant as CONSTANT
+import pandas as pd
 
 
 class BaseStrategy:
@@ -89,6 +91,8 @@ class Context:
 
     _data = {}   # SAT模式的数据集合
 
+    _ticks = []     # 所有执行的日期
+
     _accounts = {}
     _universe = None
 
@@ -98,6 +102,15 @@ class Context:
     previous_date = None    # 前一交易日, str(yyyyMMdd)格式
 
     _strategy = None        # 对于策略对象的引用
+
+    # 账户信息表
+    _df_accounts = None
+
+    # 头寸信息表
+    _df_positions = None
+
+    # 订单信息表
+    _df_order = None
 
     def __init__(self, strategy_obj):
         """
@@ -115,10 +128,13 @@ class Context:
         log.debug('初始化Context')
         self._strategy = strategy_obj
 
+        # 计算要运行的所有日期：
+        self._ticks = bt.Trade_Cal.date_range(start=self._strategy.start, end=self._strategy.end)
+
         # 资产池,根据日期，计算当日的资产列表
         self._universe = strategy_obj.universe
 
-        # 账户配置：
+        # 账户添加对Context对象的引用：
         self._accounts = strategy_obj.accounts
         for acct in self.get_accounts():
             acct.set_context(self)
@@ -128,11 +144,31 @@ class Context:
         self.today = ""
         self.previous_date = ""
 
+        # 初始化三个数据表
+        columns = ['date', 'name', 'market_price', 'return', 'agg_return']
+        dtypes = {'date': 'str', 'name': 'str'}
+        self._df_accounts = pd.DataFrame(columns=columns, dtype='float')
+        self._df_accounts = self._df_accounts.astype(dtypes)
+        # print('Account 数据表 ：')
+        # print(self._df_accounts)
+        # print(self._df_accounts.dtypes)
+
+        columns = ['date', 'account_name', 'symbol', 'amount', 'unit_price', 'market_price']
+        dtypes = {'date': 'str', 'account_name': 'str', 'symbol': 'str', 'amount': 'int'}
+        self._df_positions = pd.DataFrame(columns=columns, dtype='float')
+        self._df_positions = self._df_positions.astype(dtypes)
+
     def get_strategy(self):
         """
         返回策略对象
         """
         return self._strategy
+
+    def set_ticks(self, ticks_list):
+        self._ticks = ticks_list
+
+    def get_ticks(self):
+        return self._ticks
 
     def set_date(self, day_str):
         """
@@ -194,10 +230,9 @@ class Context:
         for acct in self.get_accounts():
             acct._his_positions[self.today] = acct.get_positions()
             
-
+        # TODO ! 计算每一个账户的市价，收益率，累计收益率
 
         # TODO 待实现 position 存入历史
-
 
         # TODO 待实现 策略的收益计算
         log.debug('[{0}]{1} 日终数据处理结束 '.format(self.get_strategy().name, self.today))
@@ -212,15 +247,18 @@ class Account:
 
     name = ''                       # 账户名
     account_type = ''               # 账户类型
+
     capital_base = 0                # 初始资金
     _cash = 0                       # 现金账户余额
     # 暂不支持账户初始持仓的情况，默认持仓为空
     _positions = {}                 # 每个资产的持仓情况 {'600016':Position对象, ...}
     _orders = []                    # 每日的所有订单，Order对象列表
-    # _orders = {}                  # 以日期为key的Order对象列表字典 
 
     _context = None                 # 对环境的引用
-    _total_value = 0.0              # 总价值
+
+    _total_value = 0.0              # 当前市值
+    # 历史所有的市值 {'20190101':12.34}
+    _daily_values = {}
 
     # 历史头寸 {key是日期}
     _his_positions = {}
@@ -233,9 +271,10 @@ class Account:
         self._context = None
         self._total_value = capital_base    # 初始总市价等于初始资金
 
+        # 初始化现金头寸
         self._cash = self.capital_base  # 现金账户余额初始化
-        cash_position = Position('CASH')
-        cash_position.change(1, capital_base, 1)    # 初始资金全部换成现金
+        cash_position = Position('CASH', self)
+        cash_position.change(1, capital_base, 1.00)    # 初始资金全部换成现金
         self.get_positions()['CASH'] = cash_position
 
     def get_value(self):
@@ -262,7 +301,14 @@ class Account:
         return self._cash
 
     def update_cash(self, volume):
+        """
+        更新现金头寸
+        
+        Arguments:
+            volume {[type]} -- [description]
+        """
         self._cash = self._cash + volume
+        self.get_position('CASH').change(1, volume, 1)
 
     def get_positions(self):
         """
@@ -282,7 +328,7 @@ class Account:
         """
 
         if symbol_id not in self._positions.keys():
-            position = Position(symbol=symbol_id)
+            position = Position(symbol=symbol_id, acct=self)
             self.get_positions()[symbol_id] = position
         return self._positions[symbol_id]
 
@@ -393,7 +439,7 @@ class StockAccount(Account):
                 # 正常下单:
                 order.order_amount = amount
                 order.direction = order_type
-                if order.direction:
+                if order.direction > 0:
                     order.offset_flag = 'open'
                 else:
                     order.offset_flag = 'close'
@@ -402,7 +448,6 @@ class StockAccount(Account):
                 the_price = data_api.stock_price(order.symbol, self.get_context().previous_date, 'close')
                 order.order_price = the_price
 
-                # TODO ？怎么判断，开平仓标识
                 order.state = OrderState.OPEN
 
         except Exception as sys_e:
@@ -424,23 +469,23 @@ class Position:
     100    1       100             1*100    100     0
     100    2       200             300      400     400-300=100
 
-
+    ['date', 'account_name', 'symbol', 'amount', 'unit_price', 'market_price']
     """
+    _account = None         # 账户的引用
     symbol = ''             # 资产编号
-    amount = 0              # 当前持仓数量
-    available_amount = 0    # 可卖出持仓数量
-    cost = 0.0              # 平均开仓成本
+    amount = 0              # 持有资产数量
+    available_amount = 0    # 可卖出资产数量
     value = 0.0             # 当前持仓市值（随市场价格变动）
-    profit = 0.0            # 累计持仓盈亏浮动 = (value - cost)
 
-    def __init__(self, symbol):
+    def __init__(self, symbol, acct):
+        self._account = acct
         self.symbol = symbol
-        self.amount = 0              # 持仓数量
-        self.available_amount = 0    # 可卖出持仓数量
-        self.profit = 0.0            # 累计持仓盈亏浮动
-        self.cost = 0.0              # 平均开仓成本
-        self.value = 0.0             # 持仓市值（随市场价格变动）
+        self.amount = 0
+        self.available_amount = self.amount
         self.change(1, 0, 0)
+
+    def get_account(self):
+        return self._account
 
     def change(self, direct, the_amount, the_price):
         """
@@ -463,11 +508,6 @@ class Position:
         self.amount = self.amount + direct * the_amount
         self.available_amount = self.amount
         self.value = self.amount * the_price    # 市场价
-
-        # 平均成本：
-        self.cost = self.cost + direct * (the_amount*the_price) # TODO 计算错误，应是每单位的买入价格
-        # 收益
-        self.profit = self.value - self.cost
 
     def __str__(self):
         """返回一个对象的描述信息"""

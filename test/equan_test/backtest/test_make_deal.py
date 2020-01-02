@@ -56,7 +56,7 @@ class Test_Make_Deal(unittest.TestCase):
         self.case = None
         self.context = None
         self.case = OrderTestCase()
-        self.context = api.Context(self.case.accounts, self.case.universe)
+        self.context = api.Context(self.case)
         self.context.set_date('20191105')   # 当日股价：6.2
 
     def tearDown(self):

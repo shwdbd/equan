@@ -9,7 +9,7 @@
 @Desc    :   回测框架执行接口
 '''
 import equan.backtest.backtest_api as api
-import equan.backtest.biz_tools as bt
+# import equan.backtest.biz_tools as bt
 from equan.backtest.tl import log
 
 
@@ -37,19 +37,20 @@ class StrategyRunner:
         log.debug('[{0}] 调用initialize函数'.format(case_obj.name))
         case_obj.initialize(context)
         # 根据参数，获得所有的交易日进行循环
-        for day in bt.Trade_Cal.date_range(start=case_obj.start, end=case_obj.end):
+        for day in context.get_ticks():
             # 按日初始化context对象（调整日期，调整可访问的数据）
             context.set_date(day)
 
             # 策略逻辑处理
-            log.debug('[{0}]{1}策略代码执行 ... '.format(case_obj.name, day))
+            log.debug('[{0}]{1}策略代码执行'.format(case_obj.name, day))
             case_obj.handle_data(context)
+
             # 订单撮合
-            # context.make_deal()   # ! 此处尝试用新的结构
             StrategyFrame.make_deal(context)
 
             # 统计汇总
             context.finish_tick()
+
             # 发送交易信号微信等
         # 所有日期策略执行结束后，统计输出策略结果
 
@@ -69,15 +70,19 @@ class StrategyFrame:
         # rule1： 如果现金不足，则全单失败！
         # END
 
-        log.debug('[{0}]开始 {1} 的交易撮合'.format(context.get_strategy().name, context.today))
+        log.debug('[{0}]开始 {1} 的交易撮合'.format(
+            context.get_strategy().name, context.today))
         for acct in context.get_accounts():
             open_orders = acct.get_orders(state=api.OrderState.OPEN)
             if len(open_orders) == 0:
-                log.debug('[{0}]撮合账户 {1} ，无订单'.format(context.get_strategy().name, acct.name))
+                log.debug('[{0}]撮合账户 {1} ，无订单'.format(
+                    context.get_strategy().name, acct.name))
             else:
-                log.debug('[{0}]撮合账户 {1} ，{2} 个订单'.format(context.get_strategy().name, acct.name, len(open_orders)))        
+                log.debug('[{0}]撮合账户 {1} ，{2} 个订单'.format(
+                    context.get_strategy().name, acct.name, len(open_orders)))
                 for order in open_orders:
                     order_capital = order.order_price * order.order_amount  # 交易金额
+                    print('order_capital = ' + str(order_capital))
 
                     log.debug('撮合订单 {0}'.format(order))
                     if order.direction == api.Order.ORDER_LONG and acct.get_cash() < order_capital:
@@ -94,15 +99,16 @@ class StrategyFrame:
                         order.state = api.OrderState.CANCELED  # 更新order的状态
                     else:
                         # 成功撮合：
-                        # TODO 此处要实现 事务处理
+
                         # 现金账户扣减
-                        acct.update_cash(-1 * (order.direction * order_capital))
+                        acct.update_cash(-1 *
+                                         (order.direction * order_capital))
                         # 得到Position账户
                         position = acct.get_position(order.symbol)
                         if not position:
-                            position = api.Position(symbol=order.symbol)
+                            position = api.Position(
+                                symbol=order.symbol, acct=acct)
                             acct.get_positions()[order.symbol] = position
-
                         position = acct.get_positions()[order.symbol]
                         position.change(
                             direct=order.direction, the_amount=order.order_amount, the_price=order.order_price)
@@ -114,6 +120,5 @@ class StrategyFrame:
                         # 交易成功
                         log.debug('订单{0} 成功 买卖 {1} {2}份！'.format(
                             order.order_id, order.symbol, order.order_amount))
-        log.debug('[{0}]{1} 交易撮合结束 '.format(context.get_strategy().name, context.today))
-
-
+        log.debug('[{0}]{1} 交易撮合结束 '.format(
+            context.get_strategy().name, context.today))

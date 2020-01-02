@@ -73,10 +73,5 @@ if __name__ == "__main__":
     runner = StrategyRunner()
     runner.back_test_run(case)
 
-    # 检查：
-    # 第一天，买入
-    # TODO 缺 历史position，无法进行追溯
-    acct = case.get_context().get_account('stock_A')
-    # print('cash = {0}'.format(acct.get_cash()))
-    # print('民生银行 = {0}'.format(acct.get_position('600016.SH')))
-    print(acct._his_positions['20191105']['600016.SH'])
+    # # 检查：
+    
