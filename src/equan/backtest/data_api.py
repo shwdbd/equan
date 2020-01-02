@@ -61,3 +61,9 @@ def stock_price(symbol, trade_date, price_type='open'):
     except Exception as err:
         log.error('查询股票价格错误 {0}'.format(str(err)))
         return None
+
+
+if __name__ == "__main__":
+    print(stock_price('600016.SH', '20191104', 'open'))
+    print(stock_price('600016.SH', '20191105', 'open'))
+    
