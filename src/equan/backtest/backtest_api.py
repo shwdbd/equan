@@ -182,72 +182,15 @@ class Context:
             date = self.today
         return self._universe.get_symbols(date)
 
-    def make_deal(self):
-        """
-        撮合今日交易
-        """
-        # 1. 找出所有账户、所有OPEN状态的Order
-        # 2. 进行购买/卖出操作（操作Poistion和Cash）
-        # 3. 设置Order的状态
-        # rule1： 如果现金不足，则全单失败！
-        # END
-
-        log.debug('[{0}]开始 {1} 的交易撮合'.format(self.get_strategy().name, self.today))
-        for acct in self.get_accounts():
-            open_orders = acct.get_orders(state=OrderState.OPEN)
-            if len(open_orders) == 0:
-                log.debug('[{0}]撮合账户 {1} ，无订单'.format(self.get_strategy().name, acct.name))
-            else:
-                log.debug('[{0}]撮合账户 {1} ，{2} 个订单'.format(self.get_strategy().name, acct.name, len(open_orders)))        
-                for order in open_orders:
-                    order_capital = order.order_price * order.order_amount  # 交易金额
-
-                    log.debug('撮合订单 {0}'.format(order))
-                    if order.direction == Order.ORDER_LONG and acct.get_cash() < order_capital:
-                        # 做多时检查现金账户余额是否足够：
-                        log.debug('现金不足，订单撤销！')
-                        order.state_message = '现金不足({0}<{1})，订单撤销！'.format(
-                            acct.get_cash(), order_capital)
-                        order.state = OrderState.CANCELED  # 更新order的状态
-                    elif order.direction == Order.ORDER_SHORT and (acct.get_position(order.symbol).available_amount < order.order_amount):
-                        # 做空时，仓中股票数量不足的情况
-                        log.debug('账户中股票不足可卖出数量，订单撤销！')
-                        order.state_message = '持有股票数量不足({0}<{1})，订单撤销！'.format(
-                            acct.get_position(order.symbol).available_amount, order.order_amount)
-                        order.state = OrderState.CANCELED  # 更新order的状态
-                    else:
-                        # 成功撮合：
-                        # TODO 此处要实现 事务处理
-                        # 现金账户扣减
-                        acct.update_cash(-1 * (order.direction * order_capital))
-                        # 得到Position账户
-                        position = acct.get_position(order.symbol)
-                        if not position:
-                            position = Position(symbol=order.symbol)
-                            acct.get_positions()[order.symbol] = position
-
-                        position = acct.get_positions()[order.symbol]
-                        position.change(
-                            direct=order.direction, the_amount=order.order_amount, the_price=order.order_price)
-
-                        # 交易成功,更新order的filled_amount
-                        order.filled_amount = order.order_amount    # 订单成交数量
-                        order.state = OrderState.FILLED
-
-                        # 交易成功
-                        log.debug('订单{0} 成功 买卖 {1} {2}份！'.format(
-                            order.order_id, order.symbol, order.order_amount))
-        log.debug('[{0}]{1} 交易撮合结束 '.format(self.get_strategy().name, self.today))
-
     def finish_tick(self):
         """
         回测周期结束处理
 
         - 头寸转历史
         - 策略效果计算
-        
         """
         log.debug('[{0}]{1} 日终数据处理 '.format(self.get_strategy().name, self.today))
+        # 历史头寸保留
         for acct in self.get_accounts():
             acct._his_positions[self.today] = acct.get_positions()
             
@@ -274,6 +217,8 @@ class Account:
     # 暂不支持账户初始持仓的情况，默认持仓为空
     _positions = {}                 # 每个资产的持仓情况 {'600016':Position对象, ...}
     _orders = []                    # 每日的所有订单，Order对象列表
+    # _orders = {}                  # 以日期为key的Order对象列表字典 
+
     _context = None                 # 对环境的引用
     _total_value = 0.0              # 总价值
 
@@ -550,7 +495,7 @@ class Order:
     买单：现金position --> 股票position
     卖单：股票position --> 现金position
 
-    Order(order_id: 2017-01-03-0000001, order_time: 2017-01-03 09:30
+    Order(order_id: 20170103-0000001, order_time: 2017-01-03 09:30
     , symbol: 600000.XSHG, direction: 1, order_amount: 100
     , state: ORDER_SUBMITTED, filled_time: , filled_amount: 0
     , transact_price: 0.0000, slippage: 0.0000, commission: 0.0000)
@@ -575,10 +520,10 @@ class Order:
 
     def __init__(self, symbol=symbol, account=None):
         # 生成order_id
-        self.order_id = (str(len(account.get_orders())+1)
-                         ).zfill(6)               # 订单编号(从1开始，顺序编号)
-        self.symbol = symbol                 # 资产编码
+        # self.order_id = (str(len(account.get_orders())+1)).zfill(6)
         self._account = account
+        self.order_id = self.gen_next_order_id()          # 订单编号
+        self.symbol = symbol                 # 资产编码
 
         self.order_time = account.get_context().now          # datetime，下单时间
         self.order_amount = 0            # 委托数量
@@ -588,6 +533,13 @@ class Order:
         self.direction = 0               # 买卖方向
         self.offset_flag = ''            # 开平仓标识， open为开仓，close为关仓
         self.state_message = ''          # 订单状态描述，如拒单原因
+
+    def gen_next_order_id(self):
+        """
+        新的Order编号生成，返回 20170103-0000001 类型的序号
+        """
+        next_id = self.get_account().get_context().today + '-' + (str(len(self.get_account().get_orders())+1)).zfill(6)
+        return next_id
 
     def get_account(self):
         return self._account

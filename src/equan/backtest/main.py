@@ -80,5 +80,3 @@ if __name__ == "__main__":
     # print('cash = {0}'.format(acct.get_cash()))
     # print('民生银行 = {0}'.format(acct.get_position('600016.SH')))
     print(acct._his_positions['20191105']['600016.SH'])
-
-    # ! 添加Cash头寸对象

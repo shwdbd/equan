@@ -83,12 +83,12 @@ class test_Stock_Order(unittest.TestCase):
         # 1. order 有两个，
         acct = case.get_context().get_account('stock_A')
         # 第1天买入Order
-        order_buy = acct.get_order('000001')    # TODO order id 同设计文档不同
+        order_buy = acct.get_order('20191104-000001')
         self.assertIsNotNone(order_buy)
         self.assertEqual(model.OrderState.FILLED, order_buy.state)  # order 状态
         # 第2天卖出Order
         # print(order_buy)
-        order_sell = acct.get_order('000002')    # TODO order id 同设计文档不同
+        order_sell = acct.get_order('20191105-000002')    # TODO order id 同设计文档不同
         self.assertIsNotNone(order_sell)
         self.assertEqual(model.OrderState.FILLED, order_sell.state)  # order 状态
 
