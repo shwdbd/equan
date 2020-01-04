@@ -117,7 +117,19 @@ class Test_SimpleStrategyRun(unittest.TestCase):
         self.assertEqual('CASH', acct.get_position('CASH').symbol)
         self.assertEqual(0, len(acct.get_orders()))     # 无订单
 
-        # TODO 检查历史头寸
-        
+        # TODO 检查 数据表
+        context = case.get_context()
+        data = context.get_strategy_data()
+        self.assertIsNotNone(data)
+        # 检查其结构是dict
+        df_return = data['return']
+        self.assertIsNotNone(df_return)
+        df_accounts = data['accounts']
+        self.assertIsNotNone(df_accounts)
+        df_position = data['position']
+        self.assertIsNotNone(df_position)
+        df_orders = data['orders']
+        self.assertIsNotNone(df_orders)
+
         # TODO 检查策略结果的输出
         

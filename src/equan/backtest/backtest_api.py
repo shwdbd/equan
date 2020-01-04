@@ -11,12 +11,14 @@
 主要类说明:
 1. StrategyCase             策略基类
 2. Context                  策略执行环境
-3. Account, StockAccount    账户类，股票账户子类
+3. Account, StockAccount    账户类,股票账户子类
 4. Position                 头寸类
 5. Order                    订单类
 6. OrderState               订单状态
-7. Universe, StockUniverse  资产池，股票资产池
+7. Universe, StockUniverse  资产池,股票资产池
 8. DynamicStockIndexUniverse    动态股票资产池
+
+# TODO 在Context时加载Benchmark数据
 
 '''
 import equan.backtest.biz_tools as bt
@@ -28,23 +30,23 @@ import pandas as pd
 
 class BaseStrategy:
     """
-    策略的基类，每个策略都继承于这个类
+    策略的基类,每个策略都继承于这个类
     """
 
     # 全局变量：
     name = '无名策略'                 # 策略名称
-    start = ''                       # 回测起始时间，yyyyMMdd格式
-    end = ''                         # 回测结束时间，yyyyMMdd格式
+    start = ''                       # 回测起始时间,yyyyMMdd格式
+    end = ''                         # 回测结束时间,yyyyMMdd格式
     universe = None					 # 资产池
-    benchmark = 'HS300'			     # str，事先算好的benchmark收益率数据
-    freq = 'd'					     # 策略执行频率，目前只支持d日频率回测
-    refresh_rate = 1				 # 执行handle_data的时间间隔，目前只支持int日期，不支持weekly、Monthly的写法
-    max_history_window = 100         # 回溯数据窗口（单位：天），默认100天
+    benchmark = 'HS300'			     # str,事先算好的benchmark收益率数据
+    freq = 'd'					     # 策略执行频率,目前只支持d日频率回测
+    refresh_rate = 1				 # 执行handle_data的时间间隔,目前只支持int日期,不支持weekly、Monthly的写法
+    max_history_window = 100         # 回溯数据窗口（单位：天）,默认100天
 
     _context = None                  # 运行环境
 
     accounts = {}					 # 账户的字典集合
-    # 按账户名进行存放，如 'my_account' : Account(fdsafdsa)
+    # 按账户名进行存放,如 'my_account' : Account(fdsafdsa)
 
     def initialize(self, context):
         """初始化策略运行环境(本函数必须被策略子类实现)
@@ -103,14 +105,7 @@ class Context:
 
     _strategy = None        # 对于策略对象的引用
 
-    # 账户信息表
-    _df_accounts = None
-
-    # 头寸信息表
-    _df_positions = None
-
-    # 订单信息表
-    _df_order = None
+    _strategy_data = None   # 策略结果数据,是dict, return, accounts, position, orders
 
     def __init__(self, strategy_obj):
         """
@@ -131,7 +126,7 @@ class Context:
         # 计算要运行的所有日期：
         self._ticks = bt.Trade_Cal.date_range(start=self._strategy.start, end=self._strategy.end)
 
-        # 资产池,根据日期，计算当日的资产列表
+        # 资产池,根据日期,计算当日的资产列表
         self._universe = strategy_obj.universe
 
         # 账户添加对Context对象的引用：
@@ -144,19 +139,62 @@ class Context:
         self.today = ""
         self.previous_date = ""
 
-        # 初始化三个数据表
-        columns = ['date', 'name', 'market_price', 'return', 'agg_return']
-        dtypes = {'date': 'str', 'name': 'str'}
-        self._df_accounts = pd.DataFrame(columns=columns, dtype='float')
-        self._df_accounts = self._df_accounts.astype(dtypes)
-        # print('Account 数据表 ：')
-        # print(self._df_accounts)
-        # print(self._df_accounts.dtypes)
+        # 初始化策略结果数据
+        self._strategy_data = self._init_strategy_data()
 
-        columns = ['date', 'account_name', 'symbol', 'amount', 'unit_price', 'market_price']
-        dtypes = {'date': 'str', 'account_name': 'str', 'symbol': 'str', 'amount': 'int'}
-        self._df_positions = pd.DataFrame(columns=columns, dtype='float')
-        self._df_positions = self._df_positions.astype(dtypes)
+    def _init_strategy_data(self):
+        """
+        初始化策略结果数据
+        """
+        data = {}
+
+        # 初始化策略绩效表
+        columns = ['tick', 'return', 'cum_return', 'bm_return', 'bm_cum_return']
+        # 日期,策略当期收益率,策略累计收益率,基准当期收益率,基准累计收益率
+        dtypes = {'tick': 'str'}
+        data['return'] = pd.DataFrame(columns=columns, dtype='float')
+        data['return'] = data['return'].astype(dtypes)
+        # print(data['return'].dtypes)
+
+        # 账户每日业绩
+        columns = ['tick', 'name', 'value', 'return', 'cum_return']
+        # 日期,账户名,市价,当期收益率,累计收益率
+        dtypes = {'tick': 'str', 'name': 'str'}
+        data['accounts'] = pd.DataFrame(columns=columns, dtype='float')
+        data['accounts'] = data['accounts'].astype(dtypes)
+        # print(data['return'].dtypes)
+
+        # 头寸每日明细
+        columns = ['tick', 'acct_name', 'symbol', 'amount', 'available_amount', 'value', 'price']
+        # 日期,账户名,资产名, 持有数量, 可卖出数量, 市值,市价
+        dtypes = {'tick': 'str', 'acct_name': 'str', 'symbol': 'str', 'amount': 'int', 'available_amount': 'int'}
+        data['position'] = pd.DataFrame(columns=columns, dtype='float')
+        data['position'] = data['position'].astype(dtypes)
+        # print(data['return'].dtypes)
+
+        # 订单每日
+        columns = ['order_id', 'acct_name', 'symbol', 'ordr_time', 'order_amount', 'filled_amount', 'order_price', 'filled_price', 'state', 'state_label', 'state_message', 'direction', 'offset_flag']
+        # 订单编号,账户名,资产名, 下单时间,委托数量,成交数量,委托价格,成交价格,状态,状态中文,订单描述,订单方向,开仓/平仓标识
+        dtypes = {
+            'order_id': 'str',          # 订单编号
+            'acct_name': 'str',     # 账户名
+            'symbol': 'str',    # 资产名
+            'ordr_time': 'str',     # 下单时间
+            'order_amount': 'int',  # 委托数量
+            'filled_amount': 'int',     # 成交数量
+            'order_price': 'int',   # 委托价格
+            'filled_price': 'int',  # 成交价格
+            'state': 'int',     # 状态
+            'state_label': 'str',   # 状态中文
+            'state_message': 'str',     # 订单描述
+            'direction': 'int',     # 订单方向
+            'offset_flag': 'str',   # 开仓/平仓标识
+            }
+        data['orders'] = pd.DataFrame(columns=columns, dtype='float')
+        data['orders'] = data['orders'].astype(dtypes)
+        # print(data['return'].dtypes)
+
+        return data
 
     def get_strategy(self):
         """
@@ -197,7 +235,7 @@ class Context:
 
     def get_accounts(self):
         """
-        取得账户引用，返回账户列表（非dict）
+        取得账户引用,返回账户列表（非dict）
 
         Returns:
             [type] -- [description]
@@ -218,24 +256,8 @@ class Context:
             date = self.today
         return self._universe.get_symbols(date)
 
-    def finish_tick(self):
-        """
-        回测周期结束处理
-
-        - 头寸转历史
-        - 策略效果计算
-        """
-        log.debug('[{0}]{1} 日终数据处理 '.format(self.get_strategy().name, self.today))
-        # 历史头寸保留
-        for acct in self.get_accounts():
-            acct._his_positions[self.today] = acct.get_positions()
-            
-        # TODO ! 计算每一个账户的市价，收益率，累计收益率
-
-        # TODO 待实现 position 存入历史
-
-        # TODO 待实现 策略的收益计算
-        log.debug('[{0}]{1} 日终数据处理结束 '.format(self.get_strategy().name, self.today))
+    def get_strategy_data(self):
+        return self._strategy_data
 
 
 class Account:
@@ -250,18 +272,15 @@ class Account:
 
     capital_base = 0                # 初始资金
     _cash = 0                       # 现金账户余额
-    # 暂不支持账户初始持仓的情况，默认持仓为空
+    # 暂不支持账户初始持仓的情况,默认持仓为空
     _positions = {}                 # 每个资产的持仓情况 {'600016':Position对象, ...}
-    _orders = []                    # 每日的所有订单，Order对象列表
+    _orders = []                    # 每日的所有订单,Order对象列表
 
     _context = None                 # 对环境的引用
 
     _total_value = 0.0              # 当前市值
     # 历史所有的市值 {'20190101':12.34}
     _daily_values = {}
-
-    # 历史头寸 {key是日期}
-    _his_positions = {}
 
     def __init__(self, name, capital_base):
         self.name = name
@@ -334,7 +353,7 @@ class Account:
 
     def get_orders(self, state=None):
         """
-        返回账户所有订单，返回list
+        返回账户所有订单,返回list
 
         默认返回所有状态的order
         """
@@ -360,26 +379,26 @@ class Account:
     def order(self, symbol, amount, order_type):
         """
         下单动作
-        - 仅下单，不完成交易
+        - 仅下单,不完成交易
         - 目前仅支持市价单（即按市场价成交）
 
 
-        order_type = '1/-1' 交易方向，即买卖
-        amount 交易手术，必须是100的整数或者0
+        order_type = '1/-1' 交易方向,即买卖
+        amount 交易手术,必须是100的整数或者0
 
         Arguments:
-            symbol {str} -- 资产编号，必须在回测资产池范围内
+            symbol {str} -- 资产编号,必须在回测资产池范围内
             amount {int} -- 交易数量
-            order_type {int} -- 交易方向，多头或空头
+            order_type {int} -- 交易方向,多头或空头
 
         Returns:
-            [Order对象] -- 下单成功返回对象，否则抛出不同的异常
+            [Order对象] -- 下单成功返回对象,否则抛出不同的异常
         """
         raise NotImplementedError
 
     def order_pct(self, symbol, pct):
         """
-        根据当前账户总资产，进行策略订单委托下单指定百分比的股票仓位。
+        根据当前账户总资产,进行策略订单委托下单指定百分比的股票仓位。
 
         Arguments:
             symbol {[type]} -- [description]
@@ -426,15 +445,15 @@ class StockAccount(Account):
 
         order = Order(symbol, self)
         try:
-            # 检查amount是否是100的倍数或是0，否则订单状态就是 REJECTED
+            # 检查amount是否是100的倍数或是0,否则订单状态就是 REJECTED
             if amount != 0 and amount % 100 != 0:
                 order.state = OrderState.REJECTED
-                order.state_message = '订单被拒绝，原因：股票单交易数量必须以100为单位(amount={0})'.format(
+                order.state_message = '订单被拒绝,原因：股票单交易数量必须以100为单位(amount={0})'.format(
                     amount)
             elif symbol not in self.get_context().get_universe():
-                # 检查symbol是否在资产池中，不在则状态为  REJECTED
+                # 检查symbol是否在资产池中,不在则状态为  REJECTED
                 order.state = OrderState.REJECTED
-                order.state_message = '订单被拒绝，原因：股票{0}不在可交易的资产池中，不能下单'.format(symbol)
+                order.state_message = '订单被拒绝,原因：股票{0}不在可交易的资产池中,不能下单'.format(symbol)
             else:
                 # 正常下单:
                 order.order_amount = amount
@@ -491,14 +510,14 @@ class Position:
         """
         仓位变动
 
-        仓位变动后，有几个属性会随之改变：
+        仓位变动后,有几个属性会随之改变：
         1. amount、available_amount 和 value
         2. profit = value / amount
 
         Arguments:
-            direct {int} -- 仓位变动方向，1多头，-1空头
+            direct {int} -- 仓位变动方向,1多头,-1空头
             the_amount {int} -- 此次买卖的头寸数量
-            the_cost {float} -- 此次买卖头寸价格，买入卖出的价格
+            the_cost {float} -- 此次买卖头寸价格,买入卖出的价格
 
         amount (price) value_change   |cost     value   profit
         100    1       100             1*100    100     0
@@ -524,7 +543,7 @@ class OrderState:
     OPEN = 0          # 待成交
     FILLED = 100      # 全部成交
     CANCELED = -1     # 撤销
-    ERROR = -9999     # 系统错误，若模拟异常、线路中断等
+    ERROR = -9999     # 系统错误,若模拟异常、线路中断等
     REJECTED = -4     # 订单被交易所拒绝
 
 
@@ -542,20 +561,22 @@ class Order:
 
     """
     # 订单类型
-    ORDER_LONG = 1          # 订单类型：做多，买入
-    ORDER_SHORT = -1        # 订单类型：做空，卖出
+    ORDER_LONG = 1          # 订单类型：做多,买入
+    ORDER_SHORT = -1        # 订单类型：做空,卖出
 
     # 属性：
     order_id = ''               # 订单编号(样式：000001)
     symbol = ''                 # 资产编码
-    order_time = None           # datetime，下单时间
+    order_time = None           # datetime,下单时间
     order_amount = 0            # 委托数量
     filled_amount = 0           # 成交数量
     order_price = 0.00          # 委托价格
+    filled_price = 0.00         # 成交价格
+
     state = OrderState.OPEN     # 订单状态
     direction = 0               # 买卖方向, 1买,-1卖
-    offset_flag = ''            # 开平仓标识， open为开仓，close为关仓
-    state_message = ''          # 订单状态描述，如拒单原因
+    offset_flag = ''            # 开平仓标识, open为开仓,close为关仓
+    state_message = ''          # 订单状态描述,如拒单原因
     _account = None             # 隶属账户的引用
 
     def __init__(self, symbol=symbol, account=None):
@@ -565,18 +586,19 @@ class Order:
         self.order_id = self.gen_next_order_id()          # 订单编号
         self.symbol = symbol                 # 资产编码
 
-        self.order_time = account.get_context().now          # datetime，下单时间
+        self.order_time = account.get_context().now          # datetime,下单时间
         self.order_amount = 0            # 委托数量
         self.filled_amount = 0           # 成交数量
         self.order_price = 0.00          # 委托价格
+        self.filled_price = 0.00
         self.state = OrderState.OPEN     # 订单状态
         self.direction = 0               # 买卖方向
-        self.offset_flag = ''            # 开平仓标识， open为开仓，close为关仓
-        self.state_message = ''          # 订单状态描述，如拒单原因
+        self.offset_flag = ''            # 开平仓标识, open为开仓,close为关仓
+        self.state_message = ''          # 订单状态描述,如拒单原因
 
     def gen_next_order_id(self):
         """
-        新的Order编号生成，返回 20170103-0000001 类型的序号
+        新的Order编号生成,返回 20170103-0000001 类型的序号
         """
         next_id = self.get_account().get_context().today + '-' + (str(len(self.get_account().get_orders())+1)).zfill(6)
         return next_id
@@ -644,12 +666,12 @@ class DynamicStockIndexUniverse(Universe):
         Arguments:
             Universe {[type]} -- [description]
             index_id {[type]} -- [description]
-            date     {datetime} -- 日期，指数
+            date     {datetime} -- 日期,指数
         """
 
         self.symbol_ids = index_id
 
     def get_symbols(self, date):
-        # 静态池，不受到影响
+        # 静态池,不受到影响
         # FIXME 需要剔除当天停牌的股票
         return self.symbol_ids

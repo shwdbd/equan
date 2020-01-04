@@ -129,6 +129,8 @@ class test_Stock_Order(unittest.TestCase):
         self.assertEqual(0, p_600016.value)     # 市值为0
 
         # 检查汇总表
+        # 汇总的postion
+
 
     # def test_error_unit(self):
     #     """

@@ -11,6 +11,7 @@
 import equan.backtest.backtest_api as api
 # import equan.backtest.biz_tools as bt
 from equan.backtest.tl import log
+import equan.backtest.constant as CONSTANT
 
 
 class StrategyRunner:
@@ -49,12 +50,60 @@ class StrategyRunner:
             StrategyFrame.make_deal(context)
 
             # 统计汇总
-            context.finish_tick()
+            StrategyFrame.finish_tick(context)
 
             # 发送交易信号微信等
         # 所有日期策略执行结束后，统计输出策略结果
 
         log.info('[{0}] 策略运行结束 '.format(case_obj.name))
+
+        # 结果导出
+        exp = LogExportor()
+        exp.export(context)
+
+
+class StrategyResultExportor:
+    """
+    策略结果导出基类
+    """
+
+    def export(self, context):
+        """
+        策略结果导出
+        """
+        pass
+
+
+class LogExportor(StrategyResultExportor):
+    """
+    日志结果展示
+    """
+    def export(self, context):
+        """
+        策略结果导出
+        """
+        data = context.get_strategy_data()
+        log.info('='*30)
+        log.info('{0} 策略执行结果:'.format(context.get_strategy().name))
+        log.info('-'*30)
+        log.info('账户[数量:{0}]:'.format(len(context.get_accounts())))
+        log.info('-'*30)
+        for acct in context.get_accounts():
+            log.info('账户 {0}]:'.format(acct.name))
+            log.info(data['accounts'])
+            # for p in acct.get_positions():
+            #     log.info('-'*15)
+            #     log.info()
+
+        df_order = data['orders']
+        log.info('Order[数量:{0}]:'.format(df_order.shape[0]))
+        log.info(df_order)
+        # log.info('-'*30)
+
+
+        log.info('-'*30)
+
+        log.info('='*30)
 
 
 class StrategyFrame:
@@ -82,7 +131,7 @@ class StrategyFrame:
                     context.get_strategy().name, acct.name, len(open_orders)))
                 for order in open_orders:
                     order_capital = order.order_price * order.order_amount  # 交易金额
-                    print('order_capital = ' + str(order_capital))
+                    # print('order_capital = ' + str(order_capital))
 
                     log.debug('撮合订单 {0}'.format(order))
                     if order.direction == api.Order.ORDER_LONG and acct.get_cash() < order_capital:
@@ -115,10 +164,67 @@ class StrategyFrame:
 
                         # 交易成功,更新order的filled_amount
                         order.filled_amount = order.order_amount    # 订单成交数量
+                        order.filled_price = order.order_price
                         order.state = api.OrderState.FILLED
 
                         # 交易成功
-                        log.debug('订单{0} 成功 买卖 {1} {2}份！'.format(
-                            order.order_id, order.symbol, order.order_amount))
-        log.debug('[{0}]{1} 交易撮合结束 '.format(
-            context.get_strategy().name, context.today))
+                        if order.direction == CONSTANT.ORDER_DIRECTION_LONG:
+                            order_direction_str = '买入'
+                        else:
+                            order_direction_str = '卖出'
+                        log.debug('订单{0} 成功 {1} {2} {3}份！'.format(order.order_id, order_direction_str, order.symbol, order.order_amount))
+        log.debug('[{0}]{1} 交易撮合结束 '.format(context.get_strategy().name, context.today))
+
+    @staticmethod
+    def finish_tick(context):
+        """
+        回测周期结束处理
+
+        - Order,Position 头寸转历史
+        - 策略效果计算
+        """
+        log.debug('[{0}]{1} 日终数据处理 '.format(context.get_strategy().name, context.today))
+        
+        for acct in context.get_accounts():
+            # 订单存入历史(全部导入，并覆盖历史）
+            for order in acct.get_orders():
+                record = {
+                    'order_id': order.order_id,          # 订单编号
+                    'acct_name': acct.name,     # 账户名
+                    'symbol': order.symbol,    # 资产名
+                    'ordr_time': order.order_time,     # 下单时间
+                    'order_amount': order.order_amount,  # 委托数量
+                    'filled_amount': order.filled_amount,     # 成交数量
+                    'order_price': order.order_price,   # 委托价格
+                    'filled_price': order.filled_price,  # 成交价格
+                    'state': order.state,     # 状态
+                    'state_label': '',   # 状态中文
+                    'state_message': order.state_message,     # 订单描述
+                    'direction': order.direction,     # 订单方向
+                    'offset_flag': order.offset_flag,   # 开平仓标识
+                }
+                context.get_strategy_data()['orders'] = context.get_strategy_data()['orders'].append(record, ignore_index=True)
+                context.get_strategy_data()['orders'].drop_duplicates(subset=['order_id'], keep='last', inplace=True)
+                # print(context.get_strategy_data()['orders'])
+
+            # 头寸保留历史表
+            for p_symbol in acct.get_positions().keys():
+                p = acct.get_positions()[p_symbol]
+                # data = {
+                #     'date': context.today,
+                #     'account_name': acct.name,
+                #     'symbol': p_symbol,
+                #     'amount': p.amount,
+                #     'unit_price': p.value / p.amount,
+                #     'market_price': p.value,
+                # }
+                # context._df_positions = context._df_positions.append(data, ignore_index=True)
+                # TODO 此处要改为往 context.data中添加
+        # print(context._df_positions)
+            
+        # TODO ! 计算每一个账户的市价，收益率，累计收益率
+
+        # TODO 待实现 position 存入历史
+
+        # TODO 待实现 策略的收益计算
+        log.debug('[{0}]{1} 日终数据处理结束 '.format(context.get_strategy().name, context.today))
