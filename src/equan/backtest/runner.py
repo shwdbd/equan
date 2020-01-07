@@ -12,6 +12,7 @@ import equan.backtest.backtest_api as api
 # import equan.backtest.biz_tools as bt
 from equan.backtest.tl import log
 import equan.backtest.constant as CONSTANT
+import pandas as pd
 
 
 class StrategyRunner:
@@ -62,6 +63,148 @@ class StrategyRunner:
         exp.export(context)
 
 
+class StrategyResult:
+    """
+    策略结果存放数据
+
+    TODO 对context对象的引用
+    TODO 开发add函数
+    TODO get_xxx函数
+    TODO 建立策略参数的数据结构，包括初始化
+    TOOD 建立取 return, acct, position, order的查询函数
+
+    TODO 单元测试：新建数据结构
+    TODO 单元测试：add函数调用（包括新增失败、数据覆盖场景）
+    TODO 单元测试：查询函数（包括带和不带条件）
+
+    """
+    _parameter = None       # 策略参数
+    _context = None         # 对context的引用
+
+    _df_return = None       # 策略收益 数据集
+    _df_account = None      # 账户 数据集
+    _df_position = None     # 头寸 数据集
+    _df_order = None        # 订单 数据集
+
+    # 策略收益 数据集结构
+    _return_columns = {
+        'tick': {'type': 'str', 'label': '日期'},
+        'value': {'type': 'float', 'label': '市价'},
+        'return': {'type': 'float', 'label': '当期收益率	'},
+        'cum_return': {'type': 'float', 'label': '累计收益率'},
+        'bm_return': {'type': 'float', 'label': '基准当期收益率'},
+        'bm_cum_return': {'type': 'float', 'label': '基准累计收益率'},
+    }
+
+    # 账户 数据集结构
+    _account_columns = {
+        'tick': {'type': 'str', 'label': '日期'},
+        'name': {'type': 'str', 'label': '账户名'},
+        'value': {'type': 'float', 'label': '市价'},
+        'return': {'type': 'float', 'label': '当期收益率'},
+        'cum_return': {'type': 'float', 'label': '累计收益率'},
+    }
+
+    # 头寸 数据集结构
+    _position_columns = {
+        'tick': {'type': 'str', 'label': '日期'},
+        'acct_name': {'type': 'str', 'label': '账户名'},
+        'symbol': {'type': 'str', 'label': '资产名'},
+        'amount': {'type': 'int', 'label': '持有数量'},
+        'available_amount': {'type': 'int', 'label': '可卖出数量'},
+        'value': {'type': 'float', 'label': '市值'},
+        'price': {'type': 'float', 'label': '市价'},
+    }
+
+    # 订单 数据集结构
+    _order_columns = {
+        'order_id': {'type': 'str', 'label': '订单编号'},
+        'name': {'type': 'str', 'label': '账户名'},
+        'symbol': {'type': 'str', 'label': '资产名'},
+        'ordr_time': {'type': 'str', 'label': '下单时间'},
+        'order_amount': {'type': 'int', 'label': '委托数量'},
+        'filled_amount': {'type': 'int', 'label': '成交数量'},
+        'order_price': {'type': 'float', 'label': '委托价格'},
+        'filled_price': {'type': 'float', 'label': '成交价格'},
+        'state': {'type': 'str', 'label': '状态'},
+        'state_label': {'type': 'str', 'label': '状态中文'},
+        'state_message': {'type': 'str', 'label': '订单描述'},
+        'direction': {'type': 'int', 'label': '订单方向'},
+        'offset_flag': {'type': 'str', 'label': '开仓/平仓标识'},
+    }
+
+    def __init__(self, context):
+        """
+        初始化
+        """
+        self._context = context
+
+        # 初始化策略参数
+        self._parameter = {
+            'start': context.start,
+            'end': context.end,
+            'universe': str(context.universe),
+            'benchmark': str(context.benchmark),
+        }
+
+        # 初始化 策略收益 数据集
+        self._df_return = self._init_dataframe(self._df_return, self._return_columns)
+
+        # 初始化 账户 数据集
+        self._df_account = self._init_dataframe(self._df_account, self._account_columns)
+
+        # 初始化 头寸 数据集
+        self._df_position = self._init_dataframe(self._df_position, self._position_columns)
+
+        # 初始化 订单 数据集
+        self._df_order = self._init_dataframe(self._df_order, self._order_columns)
+
+    def _init_dataframe(self, dataframe, define_dict):
+        dtypes = {}
+        for field in define_dict.keys():
+            dtypes[field] = define_dict[field]['type']
+        # print(dtypes)
+        dataframe = pd.DataFrame(columns=list(define_dict.keys()))
+        dataframe = dataframe.astype(dtypes)
+        # print(self._df_account.info())
+        return dataframe
+
+    def _get_columns_types(self, define_dict):
+        dtypes = {}
+        for field in define_dict.keys():
+            dtypes[field] = define_dict[field]['type']
+        return dtypes
+
+    def get_context(self):
+        return self._context
+
+    def get_returns(self):
+        """返回所有策略收益情况
+
+        Returns:
+            [dataframe] -- 数据集
+        """
+        return self._df_return
+
+    def get_return(self):
+        """返回最终日策略收益情况
+
+        Returns:
+            [dataframe] -- 数据集，仅一条记录
+        """
+        return self._df_return.loc[-1: []]
+
+    def add(self, data_type, data_dict):
+        """添加数据
+
+        Arguments:
+            data_type {[type]} -- [description]
+            data_dict {[type]} -- [description]
+        """
+        # TODO 待实现，实现通用添加数据功能，待数据覆盖更新
+        return data_dict
+
+
 class StrategyResultExportor:
     """
     策略结果导出基类
@@ -78,6 +221,7 @@ class LogExportor(StrategyResultExportor):
     """
     日志结果展示
     """
+
     def export(self, context):
         """
         策略结果导出
@@ -99,7 +243,6 @@ class LogExportor(StrategyResultExportor):
         log.info('Order[数量:{0}]:'.format(df_order.shape[0]))
         log.info(df_order)
         # log.info('-'*30)
-
 
         log.info('-'*30)
 
@@ -172,8 +315,10 @@ class StrategyFrame:
                             order_direction_str = '买入'
                         else:
                             order_direction_str = '卖出'
-                        log.debug('订单{0} 成功 {1} {2} {3}份！'.format(order.order_id, order_direction_str, order.symbol, order.order_amount))
-        log.debug('[{0}]{1} 交易撮合结束 '.format(context.get_strategy().name, context.today))
+                        log.debug('订单{0} 成功 {1} {2} {3}份！'.format(
+                            order.order_id, order_direction_str, order.symbol, order.order_amount))
+        log.debug('[{0}]{1} 交易撮合结束 '.format(
+            context.get_strategy().name, context.today))
 
     @staticmethod
     def finish_tick(context):
@@ -183,8 +328,9 @@ class StrategyFrame:
         - Order,Position 头寸转历史
         - 策略效果计算
         """
-        log.debug('[{0}]{1} 日终数据处理 '.format(context.get_strategy().name, context.today))
-        
+        log.debug('[{0}]{1} 日终数据处理 '.format(
+            context.get_strategy().name, context.today))
+
         for acct in context.get_accounts():
             # 订单存入历史(全部导入，并覆盖历史）
             for order in acct.get_orders():
@@ -203,8 +349,10 @@ class StrategyFrame:
                     'direction': order.direction,     # 订单方向
                     'offset_flag': order.offset_flag,   # 开平仓标识
                 }
-                context.get_strategy_data()['orders'] = context.get_strategy_data()['orders'].append(record, ignore_index=True)
-                context.get_strategy_data()['orders'].drop_duplicates(subset=['order_id'], keep='last', inplace=True)
+                context.get_strategy_data()['orders'] = context.get_strategy_data()[
+                    'orders'].append(record, ignore_index=True)
+                context.get_strategy_data()['orders'].drop_duplicates(
+                    subset=['order_id'], keep='last', inplace=True)
                 # print(context.get_strategy_data()['orders'])
 
             # 头寸保留历史表
@@ -221,10 +369,11 @@ class StrategyFrame:
                 # context._df_positions = context._df_positions.append(data, ignore_index=True)
                 # TODO 此处要改为往 context.data中添加
         # print(context._df_positions)
-            
+
         # TODO ! 计算每一个账户的市价，收益率，累计收益率
 
         # TODO 待实现 position 存入历史
 
         # TODO 待实现 策略的收益计算
-        log.debug('[{0}]{1} 日终数据处理结束 '.format(context.get_strategy().name, context.today))
+        log.debug('[{0}]{1} 日终数据处理结束 '.format(
+            context.get_strategy().name, context.today))

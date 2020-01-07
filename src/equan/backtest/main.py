@@ -9,7 +9,7 @@
 @Desc    :   代码执行
 '''
 import equan.backtest.backtest_api as model
-from equan.backtest.runner import StrategyRunner
+from equan.backtest.runner import StrategyRunner, StrategyResult
 
 
 class StockOrderStrategy(model.BaseStrategy):
@@ -68,10 +68,12 @@ class StockOrderStrategy(model.BaseStrategy):
 
 
 if __name__ == "__main__":
-    # 策略执行
+    # # 策略执行
+    # case = StockOrderStrategy()
+    # runner = StrategyRunner()
+    # runner.back_test_run(case)
+
+    # 生成return
     case = StockOrderStrategy()
     runner = StrategyRunner()
-    runner.back_test_run(case)
-
-    # # 检查：
-    
+    result = StrategyResult(case)

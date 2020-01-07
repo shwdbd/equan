@@ -322,7 +322,7 @@ class Account:
     def update_cash(self, volume):
         """
         更新现金头寸
-        
+
         Arguments:
             volume {[type]} -- [description]
         """
@@ -629,6 +629,9 @@ class Universe:
         """
         raise NotImplementedError
 
+    def __str__(self):
+        return '资产池基类'
+
 
 class StockUniverse(Universe):
     """
@@ -649,6 +652,9 @@ class StockUniverse(Universe):
         """
         # FIXME 需要剔除当天停牌的股票（下一个版本考虑）
         return self._symbol_ids
+
+    def __str__(self):
+        return '静态A股股票池，包括' + str(self._symbol_ids)
 
 
 class DynamicStockIndexUniverse(Universe):

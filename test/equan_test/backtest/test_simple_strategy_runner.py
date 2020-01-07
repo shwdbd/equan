@@ -117,6 +117,7 @@ class Test_SimpleStrategyRun(unittest.TestCase):
         self.assertEqual('CASH', acct.get_position('CASH').symbol)
         self.assertEqual(0, len(acct.get_orders()))     # 无订单
 
+        # 检查 策略结果
         # TODO 检查 数据表
         context = case.get_context()
         data = context.get_strategy_data()
