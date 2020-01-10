@@ -12,6 +12,9 @@
 
 '''
 from equan.backtest.tl import log, tushare
+import pandas as pd
+import numpy as np
+pd.set_option('expand_frame_repr', False)
 
 
 def stock_price(symbol, trade_date, price_type='open'):
@@ -63,7 +66,24 @@ def stock_price(symbol, trade_date, price_type='open'):
         return None
 
 
+def get_hs300_return():
+    pass
+
+
 if __name__ == "__main__":
-    print(stock_price('600016.SH', '20191104', 'open'))
-    print(stock_price('600016.SH', '20191105', 'open'))
-    
+    # print(stock_price('600016.SH', '20191104', 'open'))
+    # print(stock_price('600016.SH', '20191105', 'open'))
+
+    # df = tushare.index_basic(market='SSE')
+    # print(df[ df['name'] == '沪深300' ])
+
+    # 000300.SH
+    start_date = '20191103'
+    end_date = '20191106'
+    df = tushare.index_daily(ts_code='000300.SH', start_date=start_date, end_date=end_date, fields=['close'])
+    df['close_ysd'] = df['close'].shift(1)
+    # df['return'] = np.log((df['close_yes']-df['close'])/df['close_yes'])
+    df['return'] = np.ln( (df['close']/df['close_ysd'])-1 )
+
+    print(df)
+
