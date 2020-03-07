@@ -34,11 +34,12 @@ import numpy as np
 
 
 # 全局参数：
-start_date = '20200101'
-end_date = '20200102'
-
+start_date = '2020-03-01'
+end_date = '2020-03-04'
+# 买的参数：
 fund_symbol = '005918'  # 005918 天弘沪深300ETF连接C
 
+# TODO 考虑手续费问题
 # 资金:
 pr_input = 1000     # 每期预期投入资金
 
@@ -47,9 +48,12 @@ def get_data():
     # 取得基金日线数据
     # 返回df: date|price,  order by date desc
     data_file_dir = r'src/equan/fund/'
-    data_file = data_file_dir + '005918 2019.csv'
+    data_file = data_file_dir + '{fund_symbol}.csv'.format(fund_symbol=fund_symbol)
     df = pd.read_csv(filepath_or_buffer=data_file, usecols=['FSRQ', 'DWJZ'])
     df.rename(columns={"FSRQ": "date", "DWJZ": "price"}, inplace=True)
+    # 日期过滤
+    df = df.loc[(df.date >= start_date) & (df.date <= end_date)]
+
     df['星期'] = df['date'].apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').weekday()+1)
     # df = df.set_index('date')
     df = df.sort_values(by=['date'], ascending=True)
@@ -79,7 +83,7 @@ def run_stragy():
     # print(df.tail())
     # print(df.head())
 
-    # # 大轮询：
+    # 按日期大轮询：
     total_in = 0        # 总投入资金
     yestday_hold = 0    # 上一日总持仓数
     for row in range(0, len(df)):
@@ -105,15 +109,17 @@ def run_stragy():
             else:
                 position = 0
             print('{0} 买入 {1} '.format(record['date'], position))
+        # TODO 要考虑 止盈、止亏
 
         # 日终后处理：
+        # TODO 要考虑当日是否可买入
         df.loc[row, '投入资金'] = position
         df.loc[row, '购买份数'] = round(position/record['price'])
         df.loc[row, '当日成交金额'] = round(df.loc[row, '购买份数'] * record['price'], 2)
         total_in += df.loc[row, '当日成交金额']
         df.loc[row, '持仓总份数'] = yestday_hold + df.loc[row, '购买份数']
         yestday_hold = df.loc[row, '持仓总份数']
-    
+
     # 计算每日的资产价格：
     df['资产价格'] = np.round(df['持仓总份数']*df['price'], 2)
     print('总投入:' + str(total_in))
@@ -129,12 +135,7 @@ def run_stragy():
     print(df.tail(10))
 
 if __name__ == "__main__":
-    # df = get_data()
-    # print(df.head(5))
+    df = get_data()
+    print(df.head(5))
 
-    run_stragy()
-
-    # date = '2020-03-07'
-    # d = datetime.datetime.strptime(date, '%Y-%m-%d').weekday()+1
-    # print(d)
-
+    # run_stragy()

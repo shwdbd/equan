@@ -18,25 +18,6 @@
 
     "python.linting.flake8Args": ["--max-line-length=500"],
 
-    "todo-tree.highlights.defaultHighlight": {
-        "icon": "alert",
-        "type": "text",
-        "foreground": "red",
-        "background": "white",
-        "opacity": 50,
-        "iconColour": "blue"
-    },
-    "todo-tree.highlights.customHighlight": {
-        "TODO": {
-            "icon": "check",
-            "type": "line"
-        },
-        "FIXME": {
-            "foreground": "black",
-            "iconColour": "yellow"
-        }
-    },
-
     "better-comments.tags": [
         {
           "tag": "!",
@@ -56,5 +37,43 @@
           "strikethrough": false,
           "backgroundColor": "transparent"
         }
-      ]    
+    ],
+    
+    // 待办事项 插件配置
+    "todo-tree.tags": [	// 标签清单
+      "TODO",
+      "FIXME"
+    ],
+    "todo-tree.regexCaseSensitive": false,
+    "todo-tree.showInExplorer": true,
+    "todo-tree.customHighlight": {
+        "TODO": {
+            "icon": "check",
+            "foreground": "#000",
+            "background": "#cecb32",
+            "iconColour": "#fffc43"
+        },
+        "FIXME": {
+            "icon": "alert",
+            "foreground": "#fff",
+            "background": "#ca4848",
+            "iconColour": "#ff4343"
+        }
+    },
+    "todo-tree.highlights.customHighlight": {
+        "TODO": {
+            "icon": "check",
+            "foreground": "#000",
+            "background": "#cecb32",
+            "iconColour": "#fffc43"
+        },
+        "FIXME": {
+            "icon": "alert",
+            "foreground": "#fff",
+            "background": "#ca4848",
+            "iconColour": "#ff4343"
+        }
+    },
+
+    
 }
