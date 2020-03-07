@@ -1,0 +1,14 @@
+http://api.fund.eastmoney.com/f10/lsjz?callback=jQuery18301730369606145108_1583501484436&fundCode=005918&pageIndex=4&pageSize=20&startDate=&endDate=&_=1583548512538
+
+GET /f10/lsjz?callback=jQuery18301730369606145108_1583501484436&fundCode=005918&pageIndex=4&pageSize=20&startDate=&endDate=&_=1583548512538 HTTP/1.1
+Host: api.fund.eastmoney.com
+Connection: keep-alive
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36
+Accept: */*
+Referer: http://fundf10.eastmoney.com/jjjz_005918.html
+Accept-Encoding: gzip, deflate
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,fr;q=0.7,ja;q=0.6,zh-TW;q=0.5
+Cookie: qgqp_b_id=a5c790cb8efcc9770a6fc869b3f6317f; em_hq_fls=js; HAList=f-0-000300-%u6CAA%u6DF1300; st_si=31331266555451; st_asi=delete; EMFUND1=null; EMFUND2=null; EMFUND3=null; EMFUND4=null; EMFUND5=null; EMFUND6=null; EMFUND7=null; EMFUND8=null; EMFUND0=null; EMFUND9=03-06 21:31:09@#$%u5929%u5F18%u6CAA%u6DF1300ETF%u8054%u63A5C@%23%24005918; st_pvi=92009671528561; st_sp=2019-09-25%2009%3A09%3A12; st_inirUrl=https%3A%2F%2Fwww.baidu.com%2Flink; st_sn=6; st_psi=20200307103356147-112200304021-1215736316
+
+
+http://api.fund.eastmoney.com/f10/lsjz?callback=jQuery18301730369606145108_1583501484436&fundCode=005918&pageIndex=1&pageSize=500&startDate=2019-01-01&endDate=2019-03-05&_=1583548814846
