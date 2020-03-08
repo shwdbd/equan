@@ -42,12 +42,19 @@
     // 待办事项 插件配置
     "todo-tree.tags": [	// 标签清单
       "TODO",
-      "FIXME"
+      "FIXME",
+      "FEATURE",
     ],
     "todo-tree.regexCaseSensitive": false,
     "todo-tree.showInExplorer": true,
     "todo-tree.customHighlight": {
         "TODO": {
+            "icon": "check",
+            "foreground": "#000",
+            "background": "#cecb32",
+            "iconColour": "#fffc43"
+        },
+        "FEATURE": {
             "icon": "check",
             "foreground": "#000",
             "background": "#cecb32",
@@ -67,6 +74,12 @@
             "background": "#cecb32",
             "iconColour": "#fffc43"
         },
+        "FEATURE": {
+            "icon": "check",
+            "foreground": "#000",
+            "background": "#cecb32",
+            "iconColour": "#fffc43"
+        },
         "FIXME": {
             "icon": "alert",
             "foreground": "#fff",
@@ -74,6 +87,13 @@
             "iconColour": "#ff4343"
         }
     },
+    "todo-tree.regex.regexCaseSensitive": false,
+    "todo-tree.tree.showInExplorer": true,
+    "todo-tree.general.tags": [
+        "TODO",
+        "FIXME",
+        "FEATURE"
+    ],
 
     
 }

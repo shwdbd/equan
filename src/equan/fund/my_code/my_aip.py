@@ -47,20 +47,18 @@ class MyTest(FundBackTester):
         today = context.today
         df = context.df
         acct = context.get_account()
-        # log.info('week = {0}'.format(df.loc[context.today, '星期']))
-        # log.info('account = ' + str(context.account))
 
         week = df.loc[context.today, '星期']
-        if week == 1:       # 仅周一运行
+        if week == 1:       # 周1运行，决定周2是否买入
             nap = (df.loc[today, 'price'] - df.loc[today, 'SMA_20'])/df.loc[today, 'std_20']
-            log.info('{0} nap = {1} '.format(today, nap))
-            if nap >= -0.2 and nap <= 0.2:
+            # log.info('{0} nap = {1} '.format(today, nap))
+            if nap >= -0.1 and nap <= 0.1:
                 buy_amount = self.pr_input
-            elif nap > 0.2 and nap <= 1:
+            elif nap > 0.1 and nap <= 1:
                 buy_amount = self.pr_input * 0.5
             elif nap > 1:
                 buy_amount = self.pr_input * 0
-            elif nap < -0.2 and nap >= -1:
+            elif nap < -0.1 and nap >= -1:
                 buy_amount = self.pr_input * 1.5
             elif nap < -1:
                 buy_amount = self.pr_input * 2
@@ -69,9 +67,11 @@ class MyTest(FundBackTester):
 
             if buy_amount != 0:
                 # 下单
-                acct.order(date=today, securiy_id=self.unverise, amount=buy_amount, price=None)
+                order_price = context.df.loc[today, 'price']   # 按当日价格买入
+                order_amount = round(buy_amount/order_price)
+                acct.order(date=today, securiy_id=self.unverise, amount=order_amount, price=order_price)
                 log.info('{0} 买入 {1} '.format(today, buy_amount))
-        
+
         # TODO 要考虑 止盈、止亏
 
 
@@ -84,23 +84,7 @@ if __name__ == "__main__":
     # 开始回测
     tc = MyTest()
     tc.start_date = '2020-01-01'
-    tc.end_date = '2020-01-31'
+    tc.end_date = '2020-03-31'
     tc.unverise = '005918'  # 基金
     # print(tc.get_data().head())
     tc.run()
-
-    # # 下单操作：
-    # acct = Account('wjj', initial_capital=2000)
-    # # print(acct)
-    # # print(acct.get_orders('2019-01-01'))
-    # # print(acct.get_position('0000-00-00'))
-    # # order
-    # r = acct.order("2019-01-01", "000001", amount=100)
-    # print(r)
-    # print(acct.get_orders('2019-01-01'))
-    # r = acct.order("2019-01-01", "000002", amount=-100)
-    # print(r)
-    # print(acct.get_orders('2019-01-01'))
-
-    
-
