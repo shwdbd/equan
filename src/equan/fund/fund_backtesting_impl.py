@@ -12,6 +12,30 @@ import pandas as pd
 from equan.fund.tl import log
 
 
+class Unverise:
+    """资产库，基类
+    所有具体的资产库，都要继承这个类
+    """
+    _security_symbol_list = []     # 证券id清单
+
+    def get_symbol(self):
+        """返回所有的资产id
+
+        Returns:
+            [type] -- [description]
+        """
+        return self._security_symbol_list
+
+
+class FundUnverise(Unverise):
+    """基金资产库
+    """
+
+    def __init__(self, list_of_fund):
+        super().__init__()
+        self._security_symbol_list = list_of_fund
+
+
 class Account:
     """账户类
     """
@@ -39,6 +63,7 @@ class Account:
         self.result = pd.DataFrame(columns=cols_of_result)
         self.result.set_index('date', inplace=True)
 
+        # TODO 要补充每个账户的总收益结果
 
     def get_orders(self, date):
         try:
@@ -72,10 +97,9 @@ class Account:
         # 下单
         # 如果price==None，则说明是市价单
         # 新建一个Order对象，加入self.orders清单
-        # TODO 待实现
 
         # 只是新建Order对象，不做position的调整：
-        order = Order(acct=self, securiy_id=securiy_id)
+        order = Order(acct=self, date=date, securiy_id=securiy_id)
         if amount > 0:
             self.direction = Order.DIRECTION_BUY
         else:
@@ -88,16 +112,9 @@ class Account:
         self.get_orders(date).append(order)
 
         return True
-    
-    def marchmaking(self, date):
-        # 日终，撮合交易
-        # FIXME 此处要改到日终处理里去
-        # 首先处理 现金postion，然后再处理资产position
-        # 逐个order进行处理
-        pass
 
     def __repr__(self):
-        return '<Acct {name}, b={balance} >'.format(name=self.name, balance=self.balance)
+        return '<Acct {name} >'.format(name=self.name)
 
 
 class Order:
@@ -110,8 +127,8 @@ class Order:
     STATUS_SUCCESS = 'SUCCESS'    # 等待处理
     STATUS_FAILED = 'FAILED'    # 等待处理
 
-    def __init__(self, acct, securiy_id):
-        self.date = ""  # 订单日期
+    def __init__(self, acct, date, securiy_id):
+        self.date = date  # 订单日期
         self.security_id = securiy_id   # 购买资产symbol
         self.direction = Order.DIRECTION_BUY     # 购买方向，buy/sell
         self.order_amount = 0       # 下单数量
@@ -143,14 +160,23 @@ class Position:
         return self.amount*self.today_price
 
     def __repr__(self):
-        return '<Position {security_id}, ({amount} * {today_price}) >'.format(security_id=self.security_id, amount=self.amount, today_price=self.today_price)
+        return '<Position {date} {security_id}, ({amount} * {today_price}) >'.format(date=self.date, security_id=self.security_id, amount=self.amount, today_price=self.today_price)
+
+    @staticmethod
+    def copy(the_position):
+        if not the_position:
+            return None
+        else:
+            new_p = Position(the_position.account)
+            new_p.date = the_position.date
+            new_p.security_id = the_position.security_id
+            new_p.amount = the_position.amount
+            new_p.today_price = the_position.today_price
+            return new_p
 
 
 class StrategyResult:
     """策略总结果
-
-    # FIXME 策略的计算应该放到此处
-
     """
 
     def __init__(self, acct):
@@ -173,7 +199,7 @@ class StrategyResult:
         # 汇总统计:
 
         # 汇总账户的收益率清单
-        self.return_record = self.account.result.copy()
+        self.return_record = self.account.result.copy()     # FIXME 结果要多账户累加
         # print(self.return_record)
 
         # 买交易次数

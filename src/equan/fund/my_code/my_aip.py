@@ -24,16 +24,19 @@ class MyTest(FundBackTester):
         self.unverise = fund_symbol
 
         # 初始化账户
-        self.account = Account('定投账户', 10000*10)    # 初始账户10W元
+        # 放到 initialize 函数中
+        acct = Account('定投账户', 10000*10)    # 初始账户10W元
+        self.get_context().add_account(acct)
         log.info('初始化账户')
 
         self.pr_input = 1000     # 每期预期投入资金
+        self.sma_window = 20     # 
 
     def initialize(self):
         # 准备数据
         log.info('计算移动平均线 和 标准差 ... ')
-        self.context.df['SMA_20'] = self.context.df['price'].rolling(window=20, min_periods=1).mean()
-        self.context.df['std_20'] = self.context.df['price'].rolling(window=20, min_periods=1).std()
+        self.context.df['SMA_20'] = self.context.df['price'].rolling(window=self.sma_window, min_periods=1).mean()
+        self.context.df['std_20'] = self.context.df['price'].rolling(window=self.sma_window, min_periods=1).std()
         self.context.df['price_ysd'] = self.context.df['price'].shift(1)     # 计算昨天的价格
         # print(self.context.df.head())
         # print(self.context.df.loc['2020-01-07', '星期'])
@@ -49,9 +52,9 @@ class MyTest(FundBackTester):
         acct = context.get_account()
 
         week = df.loc[context.today, '星期']
-        if week == 1:       # 周1运行，决定周2是否买入
+        if week == 5:       # 周1运行，决定周2是否买入
             nap = (df.loc[today, 'price'] - df.loc[today, 'SMA_20'])/df.loc[today, 'std_20']
-            # log.info('{0} nap = {1} '.format(today, nap))
+            log.info('{0} nap = {1} '.format(today, nap))
             if nap >= -0.1 and nap <= 0.1:
                 buy_amount = self.pr_input
             elif nap > 0.1 and nap <= 1:

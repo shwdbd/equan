@@ -13,4 +13,4 @@ Cookie: qgqp_b_id=a5c790cb8efcc9770a6fc869b3f6317f; em_hq_fls=js; HAList=f-0-000
 
 http://api.fund.eastmoney.com/f10/lsjz?callback=jQuery18301730369606145108_1583501484436&fundCode=005918&pageIndex=1&pageSize=500&startDate=2019-01-01&endDate=2019-03-05&_=1583548814846
 
-http://api.fund.eastmoney.com/f10/lsjz?callback=jQuery18301730369606145108_1583501484436&fundCode=005918&pageIndex=1&pageSize=5000&startDate=2018-04-24&endDate=2020-03-06&_=1583548814846
+http://api.fund.eastmoney.com/f10/lsjz?callback=jQuery18301730369606145108_1583501484436&fundCode=005918&pageIndex=1&pageSize=20&startDate=2020-03-09&endDate=2020-03-09&_=1583548814846
