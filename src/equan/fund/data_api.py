@@ -11,16 +11,16 @@
 '''
 import os
 import pandas as pd
-import numpy as np
-from equan.backtest.tl import log, tushare
-from dateutil.parser import parser
+import equan.fund.tl as tl
 
+# 全局参数
 DATE_FORMAT = '%Y-%M-%d'
-
 
 FUND_DATA_DIR = r'data_file/equan/fund/'     # 基金数据存放目录
 
 CAL_DATA_FILE = r'data_file/equan/cal.csv'  # 日历文件存放目录
+
+log = tl.get_logger()
 
 
 class DataAPI:
@@ -102,11 +102,8 @@ class DataAPI:
             return df
 
 
-if __name__ == "__main__":
-    # days = DataAPI.get_cal('2020-01-01', '2020-01-05')
-    # print(days)
-
-    df = DataAPI.load_fund_daily('005918', '2020-01-01', '2020-01-31')
-    print(df.head())
-
-
+# if __name__ == "__main__":
+#     # days = DataAPI.get_cal('2020-01-01', '2020-01-05')
+#     # print(days)
+#     df = DataAPI.load_fund_daily('005918', '2020-01-01', '2020-01-31')
+#     print(df.head())

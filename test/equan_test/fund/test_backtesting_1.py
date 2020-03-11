@@ -59,10 +59,9 @@ class MyTestStrategy(FundBackTester):
 
         today = context.today
         acct = context.get_account('基金定投账户')
-        # TODO 尝试下单，买2手基金
         if today == '2019-01-03':
             # 正常单，市价单
-            acct.order(today, '005918', amount=2)
+            acct.order(today, '005918', amount=2)   # 市价单,买2手基金
         elif today == '2019-01-04':
             # 买100手失败，因为现金余额不足
             acct.order(today, '005918', amount=100)
@@ -72,12 +71,11 @@ class MyTestStrategy(FundBackTester):
         elif today == '2019-01-08':
             # 卖1手成功
             acct.order(today, '005918', amount=-1)
-        
-        # TODO 金额太大，应该被拒绝
-
 
 
 class TestMyTestStrategy(unittest.TestCase):
+    """测试最简单的回测逻辑
+    """
 
     def test_normal(self):
         start_date = '2019-01-01'
@@ -188,8 +186,13 @@ class TestMyTestStrategy(unittest.TestCase):
         self.assertEqual(Order.STATUS_SUCCESS, order_20190108.status)  # 交易成功
         self.assertEqual('', order_20190108.failed_messge)
 
-        # TODO 检查总的收益参数
-
+        # 检查总的收益参数
+        result = strategy.result
+        self.assertIsNotNone(result)
+        self.assertEqual(16.84, result.return_rate)
+        self.assertEqual(2, result.total_number_of_transactions)
+        self.assertEqual(10, result.total_capital_input)
+        self.assertEqual(11.68, result.value)
 
 
 if __name__ == "__main__":
@@ -203,12 +206,7 @@ if __name__ == "__main__":
     # 运行
     strategy.run()
 
-    acct = strategy.get_context().get_account('基金定投账户')
-    p_cash_20190103 = acct.get_position_by_id('2019-01-03', Account.CASH_SEC_ID)
-    print(acct.order_record['2019-01-07'])
-    print(acct.order_record['2019-01-07'][0].direction)
-    print(acct.position_record['2019-01-07'])
-    
-
-    
-
+    # acct = strategy.get_context().get_account('基金定投账户')
+    # print(acct.get_daily_return())
+    # print(acct.return_ratio)
+    # # 检查收益率

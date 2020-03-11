@@ -7,6 +7,19 @@
 @Version :   1.0
 @Contact :   shwangjj@163.com
 @Desc    :   回测具体实现类
+
+
+策略结果体系：
+- StrategyResult 策略总结果
+    - daily_return  每日收益清单
+- Account 分账户
+    - daily_return  每日收益清单
+    - order_record  订单明细
+    - position_record 头寸明细
+
+
+
+
 '''
 import pandas as pd
 from equan.fund.tl import log
@@ -58,12 +71,16 @@ class Account:
         cash_postion.today_price = 1
         self.position_record['0000-00-00'] = [cash_postion]
 
-        # 统计结果的数值
-        cols_of_result = ['date', '总资产', '累计投入资金', '收益率', '交易次数']
-        self.result = pd.DataFrame(columns=cols_of_result)
-        self.result.set_index('date', inplace=True)
+        # 总收益率
+        self.return_ratio = 0
+        # 总交易次数
+        self.number_of_transactions = 0
+        # 每日收益明细表：
+        self._daily_return = StrategyResult.get_empty_return_table()
 
-        # TODO 要补充每个账户的总收益结果
+    def get_daily_return(self):
+        # 返回收益表
+        return self._daily_return
 
     def get_orders(self, date):
         try:
@@ -90,7 +107,7 @@ class Account:
     def cash_change(self, date, cash):
         # 现金账户资金变动，存钱、取钱
         # 其实是一个特殊的order，必然成功的order（取钱会出现不成功）
-        # TODO 待实现
+        # TODO 待实现，现金账户存入、支出
         pass
 
     def order(self, date, securiy_id, amount=0, price=None):
@@ -178,23 +195,31 @@ class Position:
 
 class StrategyResult:
     """策略总结果
+
+    是整个回测的总结果
     """
 
-    def __init__(self, acct):
-        self.account = acct
+    def __init__(self):
+        self.return_rate = 0                        # 总收益率
+        self.total_capital_input = 0.00             # 总资金投入
+        self.value = 0                              # 期末资产总价值
 
-        self.return_rate = 0        # 总收益率
-        self.total_capital_input = 0.00     # 总资金投入
-        self.total_number_of_transactions = 0     # 买交易次数
+        self.total_number_of_transactions = 0       # 买交易次数
 
         # 每日收益率清单
-        cols_of_return = ['date', '总资产', '累计投入资金', '收益率', '交易次数']
-        self.return_record = pd.DataFrame(columns=cols_of_return)
-        self.return_record.set_index('date', inplace=True)
+        self._daily_return = StrategyResult.get_empty_return_table()
 
-        # TODO 未来要实现的：
+        # TODO 未来要实现的，计算最大回撤、基准收益率
         # 最大回撤
         # 基准收益率
+
+    @staticmethod
+    def get_empty_return_table():
+        # 返回一个空的收益率明细表格
+        cols_of_return = ['日期', '总资产', '累计投入资金', '收益率', '交易次数']
+        return_table = pd.DataFrame(columns=cols_of_return)
+        return_table.set_index('日期', inplace=True)
+        return return_table
 
     def summary(self):
         # 汇总统计:
