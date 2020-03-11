@@ -62,9 +62,17 @@ class MyTestStrategy(FundBackTester):
         # TODO 尝试下单，买2手基金
         if today == '2019-01-03':
             # 正常单，市价单
-            # acct.order(today, '005918', amount=2, price=context.data['005918'].loc[today, 'price'])
             acct.order(today, '005918', amount=2)
-
+        elif today == '2019-01-04':
+            # 买100手失败，因为现金余额不足
+            acct.order(today, '005918', amount=100)
+        elif today == '2019-01-07':
+            # 卖10手失败，因为资产份额不足
+            acct.order(today, '005918', amount=-10)
+        elif today == '2019-01-08':
+            # 卖1手成功
+            acct.order(today, '005918', amount=-1)
+        
         # TODO 金额太大，应该被拒绝
 
 
@@ -135,8 +143,50 @@ class TestMyTestStrategy(unittest.TestCase):
         self.assertEqual(0.7997, p_fund_20190103.today_price)
         self.assertEqual((2*0.7997), p_fund_20190103.get_value())
 
-        # TODO 检查那些撮合失败的order
-        # 现金不足交割
+        # 2019-01-04 当日的order: 买100手单，失败，现金不足
+        order_20190104 = acct.get_orders('2019-01-04')
+        self.assertEqual(1, len(order_20190104))
+        order_20190104 = order_20190104[0]
+        self.assertIsNotNone(order_20190104)
+        self.assertEqual('2019-01-04', order_20190104.date)
+        self.assertEqual('005918', order_20190104.security_id)
+        self.assertEqual(Order.DIRECTION_BUY, order_20190104.direction)
+        self.assertEqual(100, order_20190104.order_amount)
+        self.assertIsNone(order_20190104.order_price)  # 市价单
+        self.assertEqual(0, order_20190104.turnover_amount)
+        self.assertIsNone(order_20190104.turnover_price)    # 前一日价格成交
+        self.assertEqual(Order.STATUS_FAILED, order_20190104.status)  # 交易失败
+        self.assertEqual('现金账户余额不足', order_20190104.failed_messge)
+
+        # 2019-01-07 当日的order: 卖10手单，失败，持有份额不足
+        order_20190107 = acct.get_orders('2019-01-07')
+        self.assertEqual(1, len(order_20190107))
+        order_20190107 = order_20190107[0]
+        self.assertIsNotNone(order_20190107)
+        self.assertEqual('2019-01-07', order_20190107.date)
+        self.assertEqual('005918', order_20190107.security_id)
+        self.assertEqual(Order.DIRECTION_SELL, order_20190107.direction)
+        self.assertEqual(-10, order_20190107.order_amount)
+        self.assertIsNone(order_20190107.order_price)  # 市价单
+        self.assertEqual(0, order_20190107.turnover_amount)
+        self.assertIsNone(order_20190107.turnover_price)    # 前一日价格成交
+        self.assertEqual(Order.STATUS_FAILED, order_20190107.status)  # 交易失败
+        self.assertEqual('持有份数不足', order_20190107.failed_messge)
+
+        # 2019-01-08 当日的order: 卖1手单，成功
+        order_20190108 = acct.get_orders('2019-01-08')
+        self.assertEqual(1, len(order_20190108))
+        order_20190108 = order_20190108[0]
+        self.assertIsNotNone(order_20190108)
+        self.assertEqual('2019-01-08', order_20190108.date)
+        self.assertEqual('005918', order_20190108.security_id)
+        self.assertEqual(Order.DIRECTION_SELL, order_20190108.direction)
+        self.assertEqual(-1, order_20190108.order_amount)
+        self.assertEqual(0.8209, order_20190108.order_price)  # 市价单
+        self.assertEqual(-1, order_20190108.turnover_amount)
+        self.assertEqual(0.8209, order_20190108.turnover_price)    # 前一日价格成交
+        self.assertEqual(Order.STATUS_SUCCESS, order_20190108.status)  # 交易成功
+        self.assertEqual('', order_20190108.failed_messge)
 
         # TODO 检查总的收益参数
 
@@ -155,8 +205,9 @@ if __name__ == "__main__":
 
     acct = strategy.get_context().get_account('基金定投账户')
     p_cash_20190103 = acct.get_position_by_id('2019-01-03', Account.CASH_SEC_ID)
-    print(acct.order_record['2019-01-03'])
-    print(acct.position_record['2019-01-03'])
+    print(acct.order_record['2019-01-07'])
+    print(acct.order_record['2019-01-07'][0].direction)
+    print(acct.position_record['2019-01-07'])
     
 
     

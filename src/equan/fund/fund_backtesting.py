@@ -133,74 +133,14 @@ class FundBackTester:
         # 每日日终后，主要做交易撮合
         # 计算每日后account的 资产总值
         for account in self.get_context().get_accounts():
-            # 初始化position
-            if len(account.position_record) == 1:
-                # 第一日情况：
-                # TODO 第一日，初始化，是否可以在init函数中完成
-                the_cash_position = account.get_position(Account.CASH_DAY0)[0]
-                the_cash_position.date = date
-                account.get_position(date).append(the_cash_position)    # 现金账户
-                # 资产账户:
-                for sec_id in self.get_unverise().get_symbol():
-                    fund_postion = Position(acct=account)
-                    fund_postion.date = date
-                    fund_postion.security_id = sec_id
-                    fund_postion.amount = 0
-                    fund_postion.today_price = 0
-                    account.get_position(date).append(fund_postion)
-            else:
-                # 非第一日，则今日复制上一日
-                account.position_record[date] = []
-                for p in account.get_position(self.get_context().previous_day):
-                    new_p = Position.copy(p)
-                    new_p.date = date
-                    account.position_record[date].append(new_p)
+            
+            # 初始化当日头寸
+            self._init_daily_position(account, date)
 
             # 订单处理
             # FEATURE 目前仅支持市价单
             for order in account.get_orders(date):
-                # 按order逐一处理：
-
-                # 1. 明确价格
-                # 2. 双边，调整position
-                # 3. 加入佣金的计算
-                # 4. 更新order的成交值和状态
-
-                # 价格：
-                if order.order_price is None:
-                    # 按市价执行，按上一日价格执行
-                    if self.get_context().previous_day is None:
-                        log.error('取上日为空，则此order无法按市场定价，则此order被拒绝')
-                        order.status = Order.STATUS_FAILED
-                        break
-                    else:
-                        order.order_price = self.get_context().data[order.security_id].loc[self.get_context().previous_day, 'price']     # 此处会出现上一日价格为None的情况
-
-                # 扣减现金position，按成交价扣减
-                cash_p = account.get_position_by_id(date, Account.CASH_SEC_ID)
-                if cash_p:
-                    cash_p.amount += -1 * order.direction * (order.order_amount * order.order_price)
-                else:
-                    log.error('no cash')
-                # 增加基金position，按当日市价计算
-                fund_p = account.get_position_by_id(date, order.security_id)
-                if fund_p:
-                    fund_p.amount += order.direction * order.order_amount
-                    fund_p.today_price = order.order_price   # 按订单价格计算
-                else:
-                    log.error('no fund')
-
-                # 更新order的成交值和状态
-                order.turnover_amount = order.order_amount
-                order.turnover_price = order.order_price
-                order.status = Order.STATUS_SUCCESS
-
-                # # 有order才输出，否则不要输出
-                # log.info('{0} orders :'.format(date))
-                # log.info(account.get_orders(date))
-                # log.info('{0} position :'.format(date))
-                # log.info(account.get_position(date))
-                # log.info('-'*20)
+                self._matchmaking_order(order, date, account)
             # end of order
 
             # 每日日终，计算账户的收益率等结果数据：
@@ -222,6 +162,103 @@ class FundBackTester:
             # 写入account的result对象
             s_result = pd.Series(data={'总资产': total_asset, '累计投入资金': accumulated_investment, '收益率': return_ratio, '交易次数': number_of_order}, name=date)
             account.result = account.result.append(s_result)
+
+    def _matchmaking_order(self, order, date, account):
+        # 订单撮合
+
+        # 按order逐一处理：
+
+        # 1. 明确价格
+        # 2. 双边，调整position
+        # 3. 加入佣金的计算
+        # 4. 更新order的成交值和状态
+
+        # 计算拟成交价格
+        # 如果是市价单，则按前一日市场价计算
+        if order.order_price is None:
+            # 按市价执行，按上一日价格执行
+            if self.get_context().previous_day is None:
+                log.error('取上日为空，则此order无法按市场定价，则此order被拒绝')
+                order.status = Order.STATUS_FAILED
+                return
+            else:
+                closing_price = self.get_context().data[order.security_id].loc[self.get_context().previous_day, 'price']  # 市价
+        else:
+            # TODO 要修正，此次为非市价单，默认按订单价格成交
+            closing_price = order.order_price
+
+        # 拟交易额
+        volume_of_amount = order.direction * (order.order_amount * closing_price)
+        cash_p = account.get_position_by_id(date, Account.CASH_SEC_ID)
+        fund_p = account.get_position_by_id(date, order.security_id)
+        if not cash_p or not fund_p:
+            log.error('头寸错误，导致订单撮合失败，请检查 {order}'.format(order=order))
+        else:
+            if order.direction == Order.DIRECTION_BUY:
+                if cash_p.get_value() < volume_of_amount:
+                    log.error('现金余额不足，无法买入，交易失败')
+                    order.turnover_amount = 0
+                    order.turnover_price = None
+                    order.status = Order.STATUS_FAILED
+                    order.failed_messge = '现金账户余额不足'
+                else:
+                    # 买入
+                    order.order_price = closing_price
+                    cash_p.amount += -1 * volume_of_amount
+                    fund_p.amount += order.order_amount
+                    fund_p.today_price = order.order_price   # 按订单价格计算
+                    order.turnover_amount = order.order_amount
+                    order.turnover_price = order.order_price
+                    order.status = Order.STATUS_SUCCESS
+            elif order.direction == Order.DIRECTION_SELL:
+                if fund_p.amount < abs(order.order_amount):
+                    log.error('资产{0}份数不足，无法卖出，交易失败'.format(order.security_id))
+                    order.turnover_amount = 0
+                    order.turnover_price = None
+                    order.status = Order.STATUS_FAILED
+                    order.failed_messge = '持有份数不足'
+                else:
+                    # 卖出
+                    order.order_price = closing_price
+                    cash_p.amount += 1 * volume_of_amount
+                    fund_p.amount -= order.order_amount
+                    fund_p.today_price = order.order_price   # 按订单价格计算
+                    order.turnover_amount = order.order_amount
+                    order.turnover_price = order.order_price
+                    order.status = Order.STATUS_SUCCESS
+            else:
+                log.error('非法的订单方向，导致订单撮合失败，请检查 {d} {order}'.format(d=order.direction, order=order))
+
+        # # 有order才输出，否则不要输出
+        # log.info('{0} orders :'.format(date))
+        # log.info(account.get_orders(date))
+        # log.info('{0} position :'.format(date))
+        # log.info(account.get_position(date))
+        # log.info('-'*20)
+
+
+    def _init_daily_position(self, account, date):
+        # 初始化当日头寸
+        if len(account.position_record) == 1:
+            # 第1日情况：
+            the_cash_position = account.get_position(Account.CASH_DAY0)[0]
+            the_cash_position.date = date
+            account.get_position(date).append(the_cash_position)    # 现金账户
+            # 资产账户:
+            for sec_id in self.get_unverise().get_symbol():
+                fund_postion = Position(acct=account)
+                fund_postion.date = date
+                fund_postion.security_id = sec_id
+                fund_postion.amount = 0
+                fund_postion.today_price = 0
+                account.get_position(date).append(fund_postion)
+        else:
+            # 非第一日，则今日复制上一日
+            account.position_record[date] = []
+            for p in account.get_position(self.get_context().previous_day):
+                new_p = Position.copy(p)
+                new_p.date = date
+                account.position_record[date].append(new_p)
 
 
 class Context:

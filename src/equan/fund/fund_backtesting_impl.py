@@ -101,9 +101,9 @@ class Account:
         # 只是新建Order对象，不做position的调整：
         order = Order(acct=self, date=date, securiy_id=securiy_id)
         if amount > 0:
-            self.direction = Order.DIRECTION_BUY
-        else:
-            self.direction = Order.DIRECTION_SELL
+            order.direction = Order.DIRECTION_BUY
+        elif amount < 0:
+            order.direction = Order.DIRECTION_SELL
         order.order_amount = amount       # 下单数量
         order.order_price = price     # 下单价格
         order.status = Order.STATUS_WAIT            # 是否成交？ 等待处理/成交/拒绝
@@ -130,18 +130,19 @@ class Order:
     def __init__(self, acct, date, securiy_id):
         self.date = date  # 订单日期
         self.security_id = securiy_id   # 购买资产symbol
-        self.direction = Order.DIRECTION_BUY     # 购买方向，buy/sell
+        self.direction = 0     # 购买方向，buy/sell
         self.order_amount = 0       # 下单数量
         self.order_price = 0.00     # 下单价格
         self.status = Order.STATUS_WAIT            # 是否成交？ 等待处理/成交/拒绝
         self.turnover_amount = 0    # 成交数量
         self.turnover_price = 0.00  # 成交价格
         self.commission = 0.00      # 佣金
+        self.failed_messge = ""     # 订单失败原因
 
         self.account = acct         # 对账户对象的引用
 
     def __repr__(self):
-        return '<Order {date} {security_id}, ({amount} * {price}) {status} >'.format(date=self.date, security_id=self.security_id, amount=self.order_amount, price=self.order_price, status=self.status)
+        return '<Order {date} {security_id}, {d} ({amount} * {price}) {status} >'.format(date=self.date, security_id=self.security_id, amount=self.order_amount, price=self.order_price, status=self.status, d=self.direction)
 
 
 class Position:
