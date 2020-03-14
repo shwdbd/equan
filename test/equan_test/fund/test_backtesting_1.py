@@ -17,7 +17,7 @@
 测试案例2:
 
 '''
-from equan.fund.fund_backtesting import FundBackTester, Context
+from equan.fund.fund_backtesting import FundBackTester
 from equan.fund.fund_backtesting_impl import Account, FundUnverise, Order
 import equan.fund.tl as tl
 import unittest
@@ -35,6 +35,9 @@ class MyTestStrategy(FundBackTester):
         # 初始化账户
         fund_acct = Account('基金定投账户', initial_capital=10)
         self.get_context().add_account('基金定投账户', fund_acct)
+
+        # 资产池
+        self.set_unverise(FundUnverise(['005918']))    # 定义资产池
 
         # 函数调用标识
         self.dates_of_date_handle = []  # 被调用过的日期
@@ -201,7 +204,7 @@ if __name__ == "__main__":
     strategy = MyTestStrategy()
     strategy.start_date = start_date
     strategy.end_date = end_date
-    strategy.set_unverise(FundUnverise(['005918']))    # 定义资产池
+    
 
     # 运行
     strategy.run()
