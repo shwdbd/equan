@@ -32,6 +32,8 @@ class DataAPI:
 
         数据存放在 %CAL_DATA_FILE% 文件中
 
+        如原始文件格式出现问题，则抛出异常，不对异常做处理
+
         Arguments:
             start {str, %Y-%M-%d} -- 符合DATE_FORMAT格式的日期文本
             end {str, %Y-%M-%d} -- 符合DATE_FORMAT格式的日期文本
@@ -43,8 +45,6 @@ class DataAPI:
         Returns:
             [list of str] -- 返回日期，按日期先后顺序排列
         """
-        # TODO 单元测试
-
         # 注意文件是否存在
         if not os.path.exists(CAL_DATA_FILE):
             log.error('日历数据文件不存在！')
@@ -63,6 +63,8 @@ class DataAPI:
             df = df.loc[df.is_open == 1]
         # 注意返回的日期顺序
         df.sort_values(by='cal_date', inplace=True)
+        # 重置index
+        df.reset_index(inplace=True, drop=True)
 
         if return_type == 'list':
             return df['cal_date'].to_list()
@@ -78,8 +80,6 @@ class DataAPI:
         - 如果当日无数据，则当日数据不返回
         - 按交易日期，由早到晚排序
 
-        # FIXME 目前仍返回，有错误
-
         返回的DataFrame格式：
         index: date, 2020-03-12格式
         Data columns (total 3 columns):
@@ -87,7 +87,6 @@ class DataAPI:
         price            0 non-null float64 单位净值
         pretrade_date    1 non-null object  前一交易日
 
-        # FIXME 前一日计算有误，会有Nan的情况
         Arguments:
             fund_id {[type]} -- [description]
             start_date {[type]} -- [description]
@@ -96,7 +95,6 @@ class DataAPI:
         Returns:
             [pandas.dataframe] -- 返回的数据，如果没有数据则返回None
         """
-        # TODO 待单元测试
         data_file = FUND_DATA_DIR + '{fund_symbol}.csv'.format(fund_symbol=fund_id)
         if not os.path.exists(data_file):
             log.error('数据不存在，无法获得数据! ' + str(data_file))
@@ -121,9 +119,9 @@ class DataAPI:
             return df[['date', 'pretrade_date', 'price']]
 
 
-if __name__ == "__main__":
-    # days = DataAPI.get_cal('2020-01-01', '2020-01-05')
-    # print(days)
-    df = DataAPI.load_fund_daily('005918', '2020-04-09', '2020-03-15')
-    print(df)
-    # print(df.info())
+# if __name__ == "__main__":
+#     # days = DataAPI.get_cal('2020-01-01', '2020-01-05')
+#     # print(days)
+#     df = DataAPI.load_fund_daily('005918', '2020-04-09', '2020-03-15')
+#     print(df)
+#     # print(df.info())
