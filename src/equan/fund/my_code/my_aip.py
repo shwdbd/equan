@@ -50,7 +50,7 @@ class MyAIPStrategy(FundBackTester):
         acct = context.get_account('基金定投账户')
 
         week = df.loc[context.today, '星期']
-        if week == 1:       # 周1运行，决定周2是否买入
+        if week == 5:       # 周1运行，决定周2是否买入
             nap = (df.loc[today, 'price'] - df.loc[today, 'SMA_20'])/df.loc[today, 'std_20']
             log.info('{0} nap = {1} '.format(today, nap))
             if nap >= -0.1 and nap <= 0.1:
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     # 开始回测
     start_date = '2019-01-01'
-    end_date = '2020-03-15'
+    end_date = '2020-03-20'
     strategy = MyAIPStrategy()
     strategy.start_date = start_date
     strategy.end_date = end_date

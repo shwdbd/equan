@@ -58,6 +58,7 @@ TTJJ_TIMEOUT = 5   # 超时容忍5秒
 TTJJ_RESPONSE_ENCODING = 'utf-8'
 TTJJ_PAGE_SIZE = 5
 
+
 log = tl.get_logger()
 
 def json_to_csv(json_file, csv_file):
@@ -192,7 +193,8 @@ def ant_fund(fund_symbol, start_date, end_date):
 
 def data_merge(fund_symbol, new_df):
     # 合并，将新的数据，合并到老的数据文件中
-    data_file_path = r'data/ttjj/{0}.csv'.format(fund_symbol)
+    # data_file_path = r'data/ttjj/{0}.csv'.format(fund_symbol)
+    data_file_path = DATA_CI.FUND_DATA_DIR + '{0}.csv'.format(fund_symbol)
 
     try:
         df_old = pd.read_csv(data_file_path)
@@ -244,8 +246,8 @@ if __name__ == "__main__":
     # log.info(df)
     # # log.info(df.shape[0])
 
-    start_date = '2018-01-01'
-    end_date = '2018-12-31'
+    start_date = '2020-03-13'
+    end_date = '2020-03-23'
     # fund_symbol = '005918'
     fund_symbol = ['005918', '360008']
     # 360008， 005918

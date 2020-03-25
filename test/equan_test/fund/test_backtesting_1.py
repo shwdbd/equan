@@ -14,8 +14,6 @@
 - 规则：周1买入50%买入，周5空仓；
 - 策略执行1年2019=
 
-测试案例2:
-
 '''
 from equan.fund.fund_backtesting import FundBackTester
 from equan.fund.fund_backtesting_impl import Account, FundUnverise, Order
@@ -28,6 +26,8 @@ log = tl.get_logger()
 
 
 class MyTestStrategy(FundBackTester):
+    """测试用策略1
+    """
 
     def __init__(self):
         super().__init__()
