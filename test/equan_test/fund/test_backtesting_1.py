@@ -236,8 +236,3 @@ if __name__ == "__main__":
     strategy.set_unverise(FundUnverise(['005918']))    # 定义资产池
     # 策略运行
     strategy.run()
-
-    # acct = strategy.get_context().get_account('基金定投账户')
-    # print(acct.get_daily_return())
-    # print(acct.return_ratio)
-    # # 检查收益率

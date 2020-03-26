@@ -77,22 +77,33 @@ class FundBackTester:
             self.get_context().today = date
             self.get_context().previous_day = previous_day
 
-            # self.fm_log('策略 {0} 执行 ... '.format(date))
-            self.date_handle(self.get_context())   # 调用用户的策略初始化
+            # 如当日无数据，则跳过并日志报错
+            if self._check_account_data_lack(self.get_context().today):
+                # self.fm_log('策略 {0} 执行 ... '.format(date))
+                self.date_handle(self.get_context())   # 调用用户的策略初始化
 
-            # 日终处理：
-            # self.fm_log('日终处理 {0} ... '.format(date))
-            self._dayend_handle(date)   # 调用用户的策略初始化
+                # 日终处理：
+                # self.fm_log('日终处理 {0} ... '.format(date))
+                self._dayend_handle(date)   # 调用用户的策略初始化
 
-            # self.fm_log('---- {0} OVER -------'.format(date))
-            previous_day = date
-            number_of_day += 1
+                # self.fm_log('---- {0} OVER -------'.format(date))
+                previous_day = date
+                number_of_day += 1
         self.fm_log('策略运行完毕 【共{0}个交易日】'.format(number_of_day))
 
         # 计算策略总体收益
         self._calculate_strategy_earnings()
         # 结果要输出
         self.result_export_to_console(self.result)
+
+    def _check_account_data_lack(self, date):
+        # 判断账户数据是否有缺失，默认返回True
+        # 如果date日有任一账户有缺失，则返回False
+        for symbol in self.get_unverise().get_symbol():
+            if date not in self.get_context().data[symbol].index:
+                log.error('资产{symbol} 在 {date} 缺失数据，策略在当时跳过执行，请关注！'.format(symbol=symbol, date=date))
+                return False
+        return True
 
     def result_export_to_console(self, result):
         self.fm_log('='*20)

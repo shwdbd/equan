@@ -8,9 +8,9 @@
 @Contact :   shwangjj@163.com
 @Desc    :   使用框架计算
 '''
-from equan.fund.fund_backtesting import FundBackTester, Context
+from equan.fund.fund_backtesting import FundBackTester
 import pandas as pd
-from equan.fund.fund_backtesting_impl import Account, FundUnverise, Order
+from equan.fund.fund_backtesting_impl import Account, FundUnverise
 from equan.fund.tl import log
 import datetime
 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     # 开始回测
     start_date = '2019-01-01'
-    end_date = '2020-03-20'
+    end_date = '2020-03-26'
     strategy = MyAIPStrategy()
     strategy.start_date = start_date
     strategy.end_date = end_date
