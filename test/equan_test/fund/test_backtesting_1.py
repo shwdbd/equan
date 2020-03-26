@@ -21,6 +21,8 @@ import equan.fund.tl as tl
 import unittest
 import datetime
 import equan.fund.data_api as data_api
+import shutil
+import os
 
 log = tl.get_logger()
 
@@ -55,7 +57,8 @@ class MyTestStrategy(FundBackTester):
         # print(self.testdata_init_datadf['week'])
 
     def date_handle(self, context):
-        # 每日执行
+        # # 每日执行
+        # print(context.today)
 
         # 证明这个函数，被调用的日期
         self.dates_of_date_handle.append(context.today)
@@ -79,6 +82,27 @@ class MyTestStrategy(FundBackTester):
 class TestMyTestStrategy(unittest.TestCase):
     """测试最简单的回测逻辑
     """
+
+    def setUp(self):
+        self.test_path = r'test/equan_test/fund/'   # 当前用例的路径
+        self.data_path = r'test/equan_test/fund/fund_data'  # 测试文件存放路径
+
+        # 准备测试数据
+        shutil.copy2(self.test_path + r'005918_backtesting_1.csv', self.data_path + r'005918.csv')
+        shutil.copy2(self.test_path + r'cal_backtesting_1.csv', self.data_path + r'cal.csv')
+        self.bak_of_filepath = data_api.CAL_DATA_FILE
+        data_api.CAL_DATA_FILE = self.data_path + r'cal.csv'
+        self.bak_of_dirpath = data_api.FUND_DATA_DIR
+        data_api.FUND_DATA_DIR = self.data_path
+        return super().setUp()
+
+    def tearDown(self):
+        data_api.CAL_DATA_FILE = self.bak_of_filepath
+        data_api.FUND_DATA_DIR = self.bak_of_dirpath
+        # 删除测试用文件
+        os.remove(self.data_path + r'005918.csv')
+        os.remove(self.data_path + r'cal.csv')
+        return super().tearDown()
 
     def test_normal(self):
         start_date = '2019-01-01'
@@ -199,14 +223,18 @@ class TestMyTestStrategy(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    # 准备测试数据
+    data_api.FUND_DATA_DIR = r'test/equan_test/fund/fund_data/'
+    shutil.copy2(r'test/equan_test/fund/005918_backtesting_1.csv', r'test/equan_test/fund/fund_data/005918.csv')
+    # os.remove(r'test/equan_test/fund/fund_data/005918.csv')
+
     start_date = '2019-01-01'
     end_date = '2019-01-31'
     strategy = MyTestStrategy()
     strategy.start_date = start_date
     strategy.end_date = end_date
-    
-
-    # 运行
+    strategy.set_unverise(FundUnverise(['005918']))    # 定义资产池
+    # 策略运行
     strategy.run()
 
     # acct = strategy.get_context().get_account('基金定投账户')

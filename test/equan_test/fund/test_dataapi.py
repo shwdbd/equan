@@ -14,6 +14,8 @@ import pandas as pd
 from pandas.util.testing import assert_frame_equal
 from equan.fund.data_api import DataAPI
 import equan.fund.data_api as data_api
+import shutil
+import os
 
 
 class TestDataAPI_get_cal(unittest.TestCase):
@@ -21,12 +23,17 @@ class TestDataAPI_get_cal(unittest.TestCase):
     """
 
     def setUp(self):
+        self.test_path = r'test/equan_test/fund/'   # 当前用例的路径
+        self.data_path = r'test/equan_test/fund/fund_data'  # 测试文件存放路径
+
+        shutil.copy2(self.test_path + r'cal_test_dataapi.csv', self.data_path + r'cal.csv')
         self.bak_of_filepath = data_api.CAL_DATA_FILE
-        data_api.CAL_DATA_FILE = r'test/equan_test/fund/cal_for_test.csv'
+        data_api.CAL_DATA_FILE = self.data_path + r'cal.csv'
         return super().setUp()
 
     def tearDown(self):
         data_api.CAL_DATA_FILE = self.bak_of_filepath
+        os.remove(self.data_path + r'cal.csv')
         return super().tearDown()
 
     def test_get_cal_bylist(self):
@@ -72,15 +79,24 @@ class TestDataAPI_load_fund_daily(unittest.TestCase):
     """
 
     def setUp(self):
+        self.test_path = r'test/equan_test/fund/'   # 当前用例的路径
+        self.data_path = r'test/equan_test/fund/fund_data'  # 测试文件存放路径
+
+        # 准备测试数据
+        shutil.copy2(self.test_path + r'005918_test_dataapi.csv', self.data_path + r'005918.csv')
+        shutil.copy2(self.test_path + r'cal_test_dataapi.csv', self.data_path + r'cal.csv')
         self.bak_of_filepath = data_api.CAL_DATA_FILE
-        data_api.CAL_DATA_FILE = r'test/equan_test/fund/cal_for_test.csv'
+        data_api.CAL_DATA_FILE = self.data_path + r'cal.csv'
         self.bak_of_dirpath = data_api.FUND_DATA_DIR
-        data_api.FUND_DATA_DIR = r'test/equan_test/fund/fund_data/'
+        data_api.FUND_DATA_DIR = self.data_path
         return super().setUp()
 
     def tearDown(self):
         data_api.CAL_DATA_FILE = self.bak_of_filepath
         data_api.FUND_DATA_DIR = self.bak_of_dirpath
+        # 删除测试用文件
+        os.remove(self.data_path + r'005918.csv')
+        os.remove(self.data_path + r'cal.csv')
         return super().tearDown()
 
     def test_normal(self):

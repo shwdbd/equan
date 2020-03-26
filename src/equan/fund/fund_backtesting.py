@@ -90,7 +90,7 @@ class FundBackTester:
         self.fm_log('策略运行完毕 【共{0}个交易日】'.format(number_of_day))
 
         # 计算策略总体收益
-        self._calculate_strategy_earnings(date)
+        self._calculate_strategy_earnings()
         # 结果要输出
         self.result_export_to_console(self.result)
 
@@ -144,7 +144,7 @@ class FundBackTester:
             # 计算账户当日收益
             self._calculate_account_earnings(date, account)
 
-    def _calculate_strategy_earnings(self, date):
+    def _calculate_strategy_earnings(self):
         """计算策略总体收益
         """
         self.result = StrategyResult()
