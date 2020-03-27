@@ -1,0 +1,73 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+  <title>策略执行结果</title>
+</head>
+<body>
+    <h1>策略名称 </h1>
+
+    <table border="1" cellspacing="0" cellpadding="0" width="80%">
+        <tr align="center">
+            <th>策略总收益</th>     
+            <th>交易次数</th>
+            <th>期初投入资金</th>
+            <th>期末收益资金</th>
+        </tr>
+        <tr align="center">
+            <td><b><font color="#FF0000">{{ result.return_rate }} % </font></b></td>
+            <td>{{ result.total_number_of_transactions }} 次</td>
+            <td>{{ result.total_capital_input }}</td>
+            <td>{{ result.value }}</td>
+        </tr>
+    </table>
+    
+
+    <p>
+        收益率曲线图 <br>
+        <img src="{{ html_file_name }}.assets/fund_return_ratio.jpg"/>
+    </p>
+
+    
+
+    <hr>
+    <h2>每日收益率明细</h2>
+        <table border="1" cellspacing="0" cellpadding="0">
+            <tr>
+                <th>日期</th>
+                <th>总资产</th>
+                <th>累计投入资金</th>
+                <th>收益率</th>
+                <th>交易次数</th>
+            </tr>
+            
+            {% for index,record in result.get_return_table().iterrows() %}
+            <tr>
+                <th>{{ index }}</th>
+                <th>{{ record['总资产'] }}</th>
+                <th>{{ record['累计投入资金'] }}</th>
+                <th>{{ record['收益率'] }}</th>
+                <th>{{ record['交易次数'] }}</th>
+            </tr>
+            {% endfor %}
+        </table>
+
+    <hr>
+    <h2>持仓明细</h2>
+    <h3>账户1</h3>
+        <table border="1" cellspacing="0" cellpadding="0">
+            <tr>
+                <th>日期</th>
+                <th>总资产</th>
+                <th>累计投入资金</th>
+                <th>收益率</th>
+                <th>交易次数</th>
+            </tr>
+        </table>
+    <h3>账户2</h3>
+
+    <hr>
+    <h2>订单明细</h2>
+
+</body>
+</html>

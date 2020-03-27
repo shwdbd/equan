@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     # 开始回测
     start_date = '2019-01-01'
-    end_date = '2020-03-26'
+    end_date = '2020-03-23'
     strategy = MyAIPStrategy()
     strategy.start_date = start_date
     strategy.end_date = end_date

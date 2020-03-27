@@ -76,7 +76,7 @@ class Account:
         # 总交易次数
         self.number_of_transactions = 0
         # 每日收益明细表：
-        self._daily_return = StrategyResult.get_empty_return_table()
+        self._daily_return = StrategyResult._get_empty_return_table()
 
     def get_daily_return(self):
         # 返回收益表
@@ -207,19 +207,27 @@ class StrategyResult:
         self.total_number_of_transactions = 0       # 买交易次数
 
         # 每日收益率清单
-        self._daily_return = StrategyResult.get_empty_return_table()
+        self._daily_return = StrategyResult._get_empty_return_table()
 
         # TODO 未来要实现的，计算最大回撤、基准收益率
         # 最大回撤
         # 基准收益率
 
     @staticmethod
-    def get_empty_return_table():
+    def _get_empty_return_table():
         # 返回一个空的收益率明细表格
         cols_of_return = ['日期', '总资产', '累计投入资金', '收益率', '交易次数']
         return_table = pd.DataFrame(columns=cols_of_return)
         return_table.set_index('日期', inplace=True)
         return return_table
+
+    def get_return_table(self):
+        return self._daily_return
+
+    def append(self, date, dict_data):
+        # 添加一天的数据
+        record = pd.Series(dict_data, name=date)
+        self._daily_return = self._daily_return.append(record)
 
     def summary(self):
         # 汇总统计:

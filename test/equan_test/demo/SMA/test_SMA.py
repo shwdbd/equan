@@ -1,3 +1,17 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+'''
+@File    :   test_SMA.py
+@Time    :   2020/03/27 11:40:45
+@Author  :   Jeffrey Wang
+@Version :   1.0
+@Contact :   shwangjj@163.com
+@Desc    :   双均线策略 相关单元测试
+
+- PEPB选股 测试
+- 针对服务读取服务的测试
+
+'''
 import unittest
 # import equan.demo.SMA.sma as sma
 import equan.demo.SMA.sma_impl as impl
@@ -6,13 +20,6 @@ import pandas as pd
 # from pandas.util.testing import assert_frame_equal
 from pandas.api.types import is_string_dtype
 import os
-
-
-class Test_SMA(unittest.TestCase):
-
-    def test_get_equity_pool(self):
-        # self.assertListEqual([], sma.get_equity_pool())
-        self.assertTrue(True)
 
 
 class Test_SeekEquity(unittest.TestCase):

@@ -216,10 +216,12 @@ class TestMyTestStrategy(unittest.TestCase):
         # 检查总的收益参数
         result = strategy.result
         self.assertIsNotNone(result)
-        self.assertEqual(16.84, result.return_rate)
+        self.assertEqual(17.96, result.return_rate)
         self.assertEqual(2, result.total_number_of_transactions)
         self.assertEqual(10, result.total_capital_input)
-        self.assertEqual(11.68, result.value)
+        self.assertEqual(11.80, result.value)
+
+        # TODO 检查每日收益率表
 
 
 if __name__ == "__main__":
