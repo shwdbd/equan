@@ -28,7 +28,10 @@
         <img src="{{ html_file_name }}.assets/fund_return_ratio.jpg"/>
     </p>
 
-    
+    <hr>
+    <!--- 目录  -->
+    <h2>明细目录</h2>
+
 
     <hr>
     <h2>每日收益率明细</h2>
@@ -36,8 +39,8 @@
             <tr>
                 <th>日期</th>
                 <th>总资产</th>
-                <th>累计投入资金</th>
-                <th>收益率</th>
+                <th>当期收益率</th>
+                <th>累计收益率</th>
                 <th>交易次数</th>
             </tr>
             
@@ -45,29 +48,92 @@
             <tr>
                 <th>{{ index }}</th>
                 <th>{{ record['总资产'] }}</th>
-                <th>{{ record['累计投入资金'] }}</th>
-                <th>{{ record['收益率'] }}</th>
+                <th>{{ record['当期收益率'] }} %</th>
+                <th>{{ record['累计收益率'] }} %</th>
                 <th>{{ record['交易次数'] }}</th>
             </tr>
             {% endfor %}
         </table>
 
     <hr>
-    <h2>持仓明细</h2>
-    <h3>账户1</h3>
-        <table border="1" cellspacing="0" cellpadding="0">
-            <tr>
-                <th>日期</th>
-                <th>总资产</th>
-                <th>累计投入资金</th>
-                <th>收益率</th>
-                <th>交易次数</th>
-            </tr>
-        </table>
-    <h3>账户2</h3>
+    <h2>持仓明细:</h2>
+    {% for acct in tester.get_context().get_accounts() %}
+        <h3>账户 = {{ acct.name }}</h3>
+        <p>头寸明细:</p>
+        {% for date in tester.get_running_dates() %}
+            <hr>
+            <p>{{ date }} ：</p>
+            <p>头寸明细:</p>
+            <table border="1" cellspacing="0" cellpadding="0">
+                <tr>
+                    <th>基金</th>
+                    <th>份数</th>
+                    <th>单价</th>
+                    <th>总价</th>
+                </tr>
+                {% for p in acct.get_position(date) %}
+                <tr>
+                    <td>{{ p.security_id }}</td>
+                    <td>{{ p.amount }}</td>
+                    <td>{{ p.today_price }}</td>
+                    <td>{{ p.get_value() }}</td>
+                </tr>
+                {% endfor %}
+            </table>
 
-    <hr>
-    <h2>订单明细</h2>
+            <p>订单:</p>
+            <table border="1" cellspacing="0" cellpadding="0">
+                <tr>
+                    <th>基金</th>
+                    <th>买/卖</th>
+                    <th>成交？</th>
+                    <th>下单数量</th>
+                    <th>下单金额</th>
+                    <th>成交数量</th>
+                    <th>成交金额</th>
+                    <th>备注</th>
+                </tr>
+                {% for order in acct.get_orders(date) %}
+                <tr>
+                    <td>{{ order.security_id }}</td>
+                    <td>{{ order.direction }}</td>
+                    <td>{{ order.status }}</td>
+                    <td>{{ order.order_amount }}</td>
+                    <td>{{ order.order_price }}</td>
+                    <td>{{ order.turnover_amount }}</td>
+                    <td>{{ order.turnover_price }}</td>
+                    <td>{{ order.failed_messge }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+
+            <p>当日收益:</p>
+            <table border="1" cellspacing="0" cellpadding="0">
+                <tr>
+                    <th>总资产</th>
+                    <th>当期收益率</th>
+                    <th>累计收益率</th>
+                    <th>交易次数</th>
+                </tr>
+                <tr>
+                    <td>{{ acct.get_daily_return().loc[date, '总资产'] }}</td>
+                    <td>{{ acct.get_daily_return().loc[date, '当期收益率'] }} %</td>
+                    <td>{{ acct.get_daily_return().loc[date, '累计收益率'] }} %</td>
+                    <td>{{ acct.get_daily_return().loc[date, '交易次数'] }}</td>
+                </tr>
+            </table>
+        {% endfor %}
+    {% endfor %}
+
+    <table border="1" cellspacing="0" cellpadding="0">
+        <tr>
+            <th>日期</th>
+            <th>总资产</th>
+            <th>累计投入资金</th>
+            <th>收益率</th>
+            <th>交易次数</th>
+        </tr>
+    </table>
 
 </body>
 </html>

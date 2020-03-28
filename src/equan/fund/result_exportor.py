@@ -26,7 +26,8 @@ def export_to_console(result, tester):
     # 回测结果输出到控制台
     tester.fm_log('='*20)
     tester.fm_log('策略总收益 ：{0} %'.format(result.return_rate))
-    tester.fm_log('交易次数 ：{0} '.format(round(result.total_number_of_transactions)))
+    tester.fm_log('交易次数 ：{0} '.format(
+        round(result.total_number_of_transactions)))
     tester.fm_log('期初投入资金 ：{0}'.format(result.total_capital_input))
     tester.fm_log('期末收益资金 ：{0}'.format(result.value))
     # tester.fm_log('每日收益表 : ')
@@ -46,14 +47,15 @@ def export_to_html(result, tester):
     # 结果输出到HTML文件
 
     # 导出的HTML路径
-    html_file_path = tester.settings['html-exporter.path'] + tester.settings['html-exporter.file_name']
+    html_file_path = tester.settings['html-exporter.path'] + \
+        tester.settings['html-exporter.file_name']
 
     # 生成收益率曲线图片
     df_return_rate = result.get_return_table()
     # draw:
     plt.figure(figsize=(12, 6))
-    plt.title('当期收益率')
-    plt.plot(df_return_rate.index, df_return_rate['当期收益率'])
+    plt.title('累计收益率')
+    plt.plot(df_return_rate.index, df_return_rate['累计收益率'])
     pic_dir_path = html_file_path + r'.assets'
     if not os.path.exists(pic_dir_path):
         os.mkdir(pic_dir_path)
@@ -61,17 +63,17 @@ def export_to_html(result, tester):
     # plt.show()
     # print(df_return_rate)
 
-
     # 配置路径：my_package包，templates目录下，找到模板
     my_package = 'equan.fund'
     env = Environment(loader=PackageLoader(my_package, 'templates'))
     template = env.get_template('strategy_result.html')   # 取得模板
     # 准备数据
-    result.total_number_of_transactions = round(result.total_number_of_transactions)
-    html_context = template.render(result=result, html_file_name=tester.settings['html-exporter.file_name'])
+    result.total_number_of_transactions = round(
+        result.total_number_of_transactions)
+    html_context = template.render(
+        result=result,
+        html_file_name=tester.settings['html-exporter.file_name'],
+        tester=tester
+    )
     with open(html_file_path, mode='w', encoding='utf-8') as f:
         f.write(html_context)
-
-    # TODO 生成收益率详细表格
-    # print( result.get_return_table().to_html() )
-

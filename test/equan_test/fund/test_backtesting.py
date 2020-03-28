@@ -16,6 +16,14 @@
 
 # FIXME 货币精度，当期收益率的精度
 
+测试核对数据：
+                                        头寸
+            操作        当日价格    现金    基金    总资产  当期收益率
+2019-1-3    买2(成功)   0.7985      8.40    1.60    10      0.00%
+2019-1-4    买100(失败) 0.8163      8.40    1.63    10      0.35%
+2019-1-7    卖10(失败)  0.8209      8.40    1.64    10      0.09%
+2019-1-8    卖1(成功)   0.8192      9.22    0.82    10     -0.03%
+
 '''
 from equan.fund.fund_backtesting import FundBackTester
 from equan.fund.fund_backtesting_impl import Account, FundUnverise, Order
@@ -455,4 +463,4 @@ if __name__ == "__main__":
     # print(strategy.result.get_return_table().tail())
 
     # 检查初始化的数据准备
-    print(strategy.get_context().data['005918'])
+    # print(strategy.get_context().data['005918'])

@@ -22,7 +22,6 @@
 
 '''
 import pandas as pd
-from equan.fund.tl import log
 
 
 class Unverise:
