@@ -85,11 +85,11 @@ class FundBackTester:
         # self.fm_log('用户 initialize() 结束')
 
         number_of_day = 0
-        previous_day = None   # 前一日
+        pre_trade_day = None   # 前一日
         for date in DataAPI.get_cal(self.start_date, self.end_date):
             # 切日操作：
             self.get_context().today = date
-            self.get_context().previous_day = previous_day
+            self.get_context().pre_trade_day = pre_trade_day
 
             # 如当日无数据，则跳过并日志报错
             if self._check_account_data_lack(self.get_context().today):
@@ -103,7 +103,7 @@ class FundBackTester:
                 self.after_dayend(self.get_context())
 
                 # self.fm_log('---- {0} OVER -------'.format(date))
-                previous_day = date
+                pre_trade_day = date
                 number_of_day += 1
         self.fm_log('策略运行完毕 【共{0}个交易日】'.format(number_of_day))
 
@@ -253,7 +253,7 @@ class FundBackTester:
             return_ratio = 0        # 首日收益率为0
         else:
             p2 = total_value
-            p1 = float(account._daily_return.loc[self.get_context().previous_day, '总资产'])
+            p1 = float(account._daily_return.loc[self.get_context().pre_trade_day, '总资产'])
             return_ratio = round(math.log(p2/p1) * 100, 2)
         # print('acct return ={0}  [{1}]'.format(return_ratio, date))
 
@@ -353,7 +353,7 @@ class FundBackTester:
         else:
             # 非第一日，则今日复制上一日
             account.position_record[date] = []
-            for p in account.get_position(self.get_context().previous_day):
+            for p in account.get_position(self.get_context().pre_trade_day):
                 new_p = Position.copy(p)
                 new_p.date = date
                 # 此处要更新今日价格
@@ -371,7 +371,7 @@ class Context:
 
     def __init__(self):
         self.today = ""     # 当前日
-        self.previous_day = ""  # 前一日
+        self.pre_trade_day = ""  # 前一日(交易日)
 
         self.data = {}    # 数据池     symbol: dataframe
         self._accounts = {}     # 账户，支持多账户, name:acct_obj

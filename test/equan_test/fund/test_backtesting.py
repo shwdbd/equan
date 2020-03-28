@@ -163,7 +163,7 @@ class TestMyTestStrategy(unittest.TestCase):
 
         # data_df = strategy.get_context().data['005918']
         data_df = strategy.data_snap['005918']      # 当时留下的历史数据
-        print(data_df)
+        # print(data_df)
         self.assertIsNotNone(data_df)
         # 检查内容
         data_dict = {
