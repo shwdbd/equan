@@ -246,10 +246,10 @@ if __name__ == "__main__":
     # log.info(df)
     # # log.info(df.shape[0])
 
-    start_date = '2020-03-13'
-    end_date = '2020-03-23'
+    start_date = '2018-01-01'
+    end_date = '2020-03-27'
     # fund_symbol = '005918'
-    fund_symbol = ['005918', '360008']
+    fund_symbol = ['005918', '360008', '160416']
     # 360008， 005918
     update_daily(fund_symbol, start_date, end_date)
 

@@ -25,6 +25,9 @@ import datetime
 import equan.fund.data_api as data_api
 import shutil
 import os
+import pandas as pd
+from pandas.util.testing import assert_frame_equal
+import copy
 
 log = tl.get_logger()
 
@@ -54,6 +57,9 @@ class MyTestStrategy(FundBackTester):
         2. 将data复制到self.initialize_data变量中，使得可以单元测试到
         """
         self.func_called.append('initialize')   # 证明函数被调用
+
+        # 存个数据包的快照
+        self.data_snap = copy.deepcopy(self.get_context().data)
 
         data_df = self.get_context().data['005918']
         data_df['week'] = data_df['date'].apply(lambda x: datetime.datetime.strptime(x, data_api.DATE_FORMAT).weekday()+1)
@@ -102,8 +108,8 @@ class TestMyTestStrategy(unittest.TestCase):
         self.data_path = r'test/equan_test/fund/fund_data'  # 测试文件存放路径
 
         # 准备测试数据
-        shutil.copy2(self.test_path + r'005918_backtesting_1.csv', self.data_path + r'005918.csv')
-        shutil.copy2(self.test_path + r'cal_backtesting_1.csv', self.data_path + r'cal.csv')
+        shutil.copy2(self.test_path + r'005918_backtesting.csv', self.data_path + r'005918.csv')
+        shutil.copy2(self.test_path + r'cal_backtesting.csv', self.data_path + r'cal.csv')
         self.bak_of_filepath = data_api.CAL_DATA_FILE
         data_api.CAL_DATA_FILE = self.data_path + r'cal.csv'
         self.bak_of_dirpath = data_api.FUND_DATA_DIR
@@ -128,10 +134,11 @@ class TestMyTestStrategy(unittest.TestCase):
         # 策略运行
         strategy.run()
 
+        # 检查默认的数据准备
+        self.check_data(strategy)
+
         # 检查各步骤调用次序
         self.check_func_callable(strategy)
-
-        # TODO 检查策略初始化情况（如数据准备等）
 
         # 检查2019-01-03情况
         self.check_20190103(strategy)
@@ -150,6 +157,23 @@ class TestMyTestStrategy(unittest.TestCase):
 
         # 检查策略输出到HTML的情况
         self.check_exp_to_html(strategy)
+
+    def check_data(self, strategy):
+        # 检查回测框架准备的数据集合
+
+        # data_df = strategy.get_context().data['005918']
+        data_df = strategy.data_snap['005918']      # 当时留下的历史数据
+        print(data_df)
+        self.assertIsNotNone(data_df)
+        # 检查内容
+        data_dict = {
+            'date': ['2019-01-02', '2019-01-03', '2019-01-04', '2019-01-07', '2019-01-08'],
+            'pretrade_date': ['2018-12-28', '2019-01-02', '2019-01-03', '2019-01-04', '2019-01-07'],
+            'price': [0.7997, 0.7985, 0.8163, 0.8209, 0.8192]
+        }
+        df = pd.DataFrame(data=data_dict, index=pd.Series(name='date', data=data_dict['date']))
+        # print(df)
+        assert_frame_equal(data_df, df, check_like=True)
 
     def check_func_callable(self, strategy):
         # 检查各函数执行顺序
@@ -407,12 +431,12 @@ class TestMyTestStrategy(unittest.TestCase):
 
 if __name__ == "__main__":
     # # 准备测试数据
-    # data_api.FUND_DATA_DIR = r'test/equan_test/fund/fund_data/'     # TODO 测试数据直接放这个目录，不香么？
+    # data_api.FUND_DATA_DIR = r'test/equan_test/fund/fund_data/'
     # shutil.copy2(r'test/equan_test/fund/005918_backtesting_1.csv', r'test/equan_test/fund/fund_data/005918.csv')
     # # os.remove(r'test/equan_test/fund/fund_data/005918.csv')
 
     start_date = '2019-01-01'
-    end_date = '2019-12-08'
+    end_date = '2019-01-08'
     strategy = MyTestStrategy()
     strategy.start_date = start_date
     strategy.end_date = end_date
@@ -420,10 +444,13 @@ if __name__ == "__main__":
     # 策略运行
     strategy.run()
 
-    # 显示最终的acct收益率表
-    acct = strategy.get_context().get_account('基金定投账户')
-    print(acct.get_daily_return().tail())
-    # print(acct.get_daily_return().info())
+    # # 显示最终的acct收益率表
+    # acct = strategy.get_context().get_account('基金定投账户')
+    # print(acct.get_daily_return().tail())
+    # # print(acct.get_daily_return().info())
 
-    # 策略的收益率明细：
-    print(strategy.result.get_return_table().tail())
+    # # 策略的收益率明细：
+    # print(strategy.result.get_return_table().tail())
+
+    # 检查初始化的数据准备
+    print(strategy.get_context().data['005918'])
