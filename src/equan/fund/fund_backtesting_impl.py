@@ -229,21 +229,3 @@ class StrategyResult:
         # 添加一天的数据
         record = pd.Series(dict_data, name=date)
         self._daily_return = self._daily_return.append(record)
-
-    def summary(self):
-        # 汇总统计:
-
-        # 汇总账户的收益率清单
-        self.return_record = self.account.result.copy()     # FIXME 结果要多账户累加
-        # print(self.return_record)
-
-        # 买交易次数
-        self.total_number_of_transactions = self.return_record['交易次数'].sum()
-        # print(self.total_number_of_transactions)
-
-        # 总收益率、总资金投入
-        self.return_rate = round(float(self.return_record.tail(1)['收益率']), 2)
-        # print(self.return_rate)
-
-        log.info('总收益率 = {0} %'.format(self.return_rate))
-        log.info('交易次数 = {0}'.format(self.total_number_of_transactions))
