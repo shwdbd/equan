@@ -18,6 +18,10 @@ v 0.0.1 版本说明：
 
 # TODO 数据集合，需要提供前置天数，默认30天
 
+规则：
+1. 统计的交易次数，仅包括成功的交易；
+
+
 
 '''
 import pandas as pd
@@ -25,6 +29,7 @@ import equan.fund.tl as tl
 from equan.fund.fund_backtesting_impl import Order, Account, Position, StrategyResult
 from equan.fund.data_api import DataAPI
 import equan.fund.result_exportor as exporter
+import math
 
 log = tl.get_logger()
 
@@ -37,7 +42,7 @@ class FundBackTester:
         self.end_date = ""
         self._unverise = None   # 资产池
         # benchmark
-        self.account = None
+        self.account = None     # FIXME 建议删除，无用
         self.commission = 0.001     # 佣金，千分之一
 
         # 内部参数：
@@ -95,6 +100,8 @@ class FundBackTester:
                 # self.fm_log('日终处理 {0} ... '.format(date))
                 self._dayend_handle(date)   # 调用用户的策略初始化
 
+                self.after_dayend(self.get_context())
+
                 # self.fm_log('---- {0} OVER -------'.format(date))
                 previous_day = date
                 number_of_day += 1
@@ -125,12 +132,7 @@ class FundBackTester:
         self.fm_log('='*20)
         self.fm_log('策略总收益 ：{0} %'.format(result.return_rate))
         self.fm_log('交易次数 ：{0} '.format(round(result.total_number_of_transactions)))
-        self.fm_log('期初投入资金 ：{0}'.format(result.total_capital_input))
         self.fm_log('期末收益资金 ：{0}'.format(result.value))
-        # self.fm_log('每日收益表 : ')
-        # for acct in self.get_context().get_accounts():
-        #     self.fm_log('账户 {0} ：'.format(acct.name))
-        #     self.fm_log('{0}'.format(acct.get_daily_return()))
         self.fm_log('='*20)
 
     def _initialize_by_framework(self):
@@ -152,6 +154,10 @@ class FundBackTester:
         pass
 
     def date_handle(self, context):
+        # 需要具体实现继承
+        pass
+
+    def after_dayend(self, context):
         # 需要具体实现继承
         pass
 
@@ -178,23 +184,21 @@ class FundBackTester:
                 self._matchmaking_order(order, date, account)
             # end of order
 
-            # TODO 按市场价，重新计算头寸（解决没有订单日期的头寸变化）
-
-
+            # 更新头寸中的资产价格
+            for p in account.get_position(date):
+                if p.security_id != Account.CASH_SEC_ID:
+                    p.today_price = self.get_context().data[p.security_id].loc[date, 'price']
 
             # 计算账户当日收益
             return_data = self._calculate_account_earnings(date, account)
             df_acct_return = df_acct_return.append(return_data, ignore_index=True)
 
         # 填，策略每日收益率表格
-        # ['日期', '总资产', '累计投入资金', '收益率', '交易次数']
-        # return_data = {'总资产': total_value, '累计投入资金': accumulated_investment, '收益率': return_ratio, '交易次数': number_of_order}
+        # ['日期', '总资产', '当期收益率', '累计收益率', '交易次数']
         data = {
             '总资产': round(df_acct_return['总资产'].sum(), 2),
-            '累计投入资金': round(df_acct_return['累计投入资金'].sum(), 2),
-            '收益率': round(df_acct_return['收益率'].sum(), 2),
+            '当期收益率': round(df_acct_return['当期收益率'].sum() / len(self.get_context().get_accounts()), 2),    # 策略收益率按账户数量取绝对平均
             '交易次数': round(df_acct_return['交易次数'].sum())}
-        # data = return_data
         self.result.append(date, data)
 
     def _calculate_strategy_earnings(self):
@@ -202,25 +206,35 @@ class FundBackTester:
         """
         # 计算每个账户每天的收益
         for account in self.get_context().get_accounts():
-            # 总收益率（看最后一天的收益率）
-            account.return_ratio = float(account._daily_return.tail(1)['收益率'])
+            # 计算每日的累计收益率
+            account.get_daily_return()['累计收益率'] = account.get_daily_return()['当期收益率'].cumsum()
+
+            # 账户总收益率（看最后一天的累计收益率）
+            account.return_ratio = float(account._daily_return.tail(1)['累计收益率'])
             # 总交易次数
             account.number_of_transactions = account._daily_return['交易次数'].sum()
 
             # 策略累计
             self.result.return_rate += account.return_ratio
+            self.result.total_capital_input += account.initial_capital
             self.result.total_number_of_transactions += account.number_of_transactions
-            self.result.total_capital_input += round(float(account._daily_return.tail(1)['累计投入资金']), 2)
             self.result.value += round(float(account._daily_return.tail(1)['总资产']), 2)
 
         # 计算策略总参数：
-        self.result.return_rate = self.result.return_rate / len(self.get_context().get_accounts())    # 算数平均
+        # 1. 策略每日累计收益率：
+        self.result.get_return_table()['累计收益率'] = self.result.get_return_table()['当期收益率'].cumsum()
+        # 2. 策略收益率：
+        self.result.return_rate = round(float(self.result.get_return_table().tail(1)['累计收益率']), 2)
+        # 3. 策略期末资产总价值：
+        self.result.value = round(float(self.result.get_return_table().tail(1)['总资产']), 2)
+        # 4. 总交易次数
+        self.result.total_number_of_transactions = int(self.result.get_return_table()['交易次数'].sum())
 
     def _calculate_account_earnings(self, date, account):
         """计算账户日终收益
 
         在 account.cols_of_return 中添加一行
-        计算：'日期', '总资产', '累计投入资金', '收益率', '交易次数'
+        计算：'日期', '总资产', '当期收益率', '累计收益率', '交易次数'
 
         并返回当日的数据，用dict格式返回
 
@@ -234,12 +248,14 @@ class FundBackTester:
             total_value += p.get_value()
 
         # 计算每日的账户收益率
-        # 累计投入资金，假设只用原始init_balance投资
-        accumulated_investment = account.initial_capital
-
-        # 累计收益率
-        account._daily_return['昨日总资产'] = account._daily_return['总资产'].shift(1)
-        return_ratio = round(((total_value/accumulated_investment)-1)*100, 2)
+        # 账户当日收益率
+        if account._daily_return.empty:
+            return_ratio = 0        # 首日收益率为0
+        else:
+            p2 = total_value
+            p1 = float(account._daily_return.loc[self.get_context().previous_day, '总资产'])
+            return_ratio = round(math.log(p2/p1) * 100, 2)
+        # print('acct return ={0}  [{1}]'.format(return_ratio, date))
 
         # 交易次数，仅成功交易
         number_of_order = 0
@@ -250,8 +266,7 @@ class FundBackTester:
         # 汇总加入
         return_data = {
             '总资产': total_value,
-            '累计投入资金': accumulated_investment,
-            '收益率': return_ratio,
+            '当期收益率': return_ratio,
             '交易次数': number_of_order}
         s_result = pd.Series(data=return_data, name=date)
         account._daily_return = account.get_daily_return().append(s_result)
@@ -264,21 +279,16 @@ class FundBackTester:
         # 按order逐一处理：
 
         # 1. 明确价格
-        # 2. 双边，调整position  ==> # FIXME 可放到后续统一计算
+        # 2. 双边，调整position
         # 3. 加入佣金的计算
         # 4. 更新order的成交值和状态
         # FEATURE 目前仅支持市价单
 
         # 计算拟成交价格
-        # 如果是市价单，则按前一日市场价计算
+        # 如果是市价单，则当日close价格成交
         if order.order_price is None:
-            # 按市价执行，按上一日价格执行
-            if self.get_context().previous_day is None:
-                log.error('取上日为空，则此order无法按市场定价，则此order被拒绝')
-                order.status = Order.STATUS_FAILED
-                return
-            else:
-                closing_price = self.get_context().data[order.security_id].loc[self.get_context().previous_day, 'price']  # 市价
+            # 按市价执行，则当日close价格成交
+            closing_price = self.get_context().data[order.security_id].loc[self.get_context().today, 'price']  # close价格
         else:
             # TODO 要修正，此次为非市价单，默认按订单价格成交
             closing_price = order.order_price
@@ -299,12 +309,12 @@ class FundBackTester:
                     order.failed_messge = '现金账户余额不足'
                 else:
                     # 买入
-                    order.order_price = closing_price
+                    # order.order_price = closing_price
                     cash_p.amount += -1 * volume_of_amount
                     fund_p.amount += order.order_amount
                     fund_p.today_price = order.order_price   # 按订单价格计算
                     order.turnover_amount = order.order_amount
-                    order.turnover_price = order.order_price
+                    order.turnover_price = closing_price
                     order.status = Order.STATUS_SUCCESS
             elif order.direction == Order.DIRECTION_SELL:
                 if fund_p.amount < abs(order.order_amount):
@@ -315,12 +325,12 @@ class FundBackTester:
                     order.failed_messge = '持有份数不足'
                 else:
                     # 卖出
-                    order.order_price = closing_price
+                    # order.order_price = closing_price
                     cash_p.amount += 1 * volume_of_amount
-                    fund_p.amount -= order.order_amount
+                    fund_p.amount += order.order_amount
                     fund_p.today_price = order.order_price   # 按订单价格计算
                     order.turnover_amount = order.order_amount
-                    order.turnover_price = order.order_price
+                    order.turnover_price = closing_price
                     order.status = Order.STATUS_SUCCESS
             else:
                 log.error('非法的订单方向，导致订单撮合失败，请检查 {d} {order}'.format(d=order.direction, order=order))

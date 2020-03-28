@@ -52,8 +52,8 @@ def export_to_html(result, tester):
     df_return_rate = result.get_return_table()
     # draw:
     plt.figure(figsize=(12, 6))
-    plt.title('收益率')
-    plt.plot(df_return_rate.index, df_return_rate['收益率'])
+    plt.title('当期收益率')
+    plt.plot(df_return_rate.index, df_return_rate['当期收益率'])
     pic_dir_path = html_file_path + r'.assets'
     if not os.path.exists(pic_dir_path):
         os.mkdir(pic_dir_path)

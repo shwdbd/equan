@@ -54,7 +54,7 @@ class MyTestStrategy(FundBackTester):
         df = self.get_context().data['005918']
         acct = context.get_account('基金账户')
         week = df.loc[context.today, '星期']
-        # print(today + ' : ' + str(week))
+        print(today + ' : ' + str(week))
         if week == 1:   # 周一
             # 下单买入
             order_price = df.loc[today, 'price']   # 按当日价格买入
@@ -66,11 +66,27 @@ class MyTestStrategy(FundBackTester):
             acct.order(date=today, securiy_id='005918', amount=-1, price=order_price)
             print('{0} 卖出 {1} 份 {2}'.format(today, 1, order_price))
 
+        # # 2019-01-07买入
+        # if today == '2019-01-07':
+        #     # 下单买入
+        #     order_price = df.loc[today, 'price']   # 按当日价格买入
+        #     acct.order(date=today, securiy_id='005918', amount=1, price=order_price)
+        #     print('{0} 买入 {1} 份 {2}'.format(today, 1, order_price))
+        # # 2019-01-09卖出
+        # if today == '2019-01-09':
+        #     # 下单买入
+        #     order_price = df.loc[today, 'price']   # 按当日价格买入
+        #     acct.order(date=today, securiy_id='005918', amount=-1, price=order_price)
+        #     print('{0} 卖出 {1} 份 {2}'.format(today, 1, order_price))
+
+        # if today!='2019-01-02':
+        #     print('Positoin at {0}'.format(context.previous_day))
+        #     print(context.get_account('基金账户').get_position(context.previous_day))
 
 if __name__ == "__main__":
     # 开始回测：
     start_date = '2019-01-01'
-    end_date = '2019-02-10'
+    end_date = '2019-06-10'
     strategy = MyTestStrategy()
     strategy.start_date = start_date
     strategy.end_date = end_date

@@ -29,7 +29,7 @@ class Unverise:
     """资产库，基类
     所有具体的资产库，都要继承这个类
     """
-    _security_symbol_list = []     # 证券id清单
+    _security_symbol_list = []     # 证券id清单，存放一个个string对象，每个string是一个代码
 
     def get_symbol(self):
         """返回所有的资产id
@@ -53,8 +53,8 @@ class Account:
     """账户类
     """
 
-    CASH_SEC_ID = 'cash'
-    CASH_DAY0 = "0000-00-00"
+    CASH_SEC_ID = 'cash'        # 现金的资产id
+    CASH_DAY0 = "0000-00-00"    # 现金头寸的初始日期
 
     def __init__(self, name, initial_capital=0):
         self.name = name                    # 账户名称
@@ -64,12 +64,14 @@ class Account:
         self.order_record = {}    # '2019-03-01: [order1, order2]'
         # 持仓记录清单，默认有一个cash的账户
         self.position_record = {}       # '2019-03-01: [position1, position2]'
+
+        # 初始化最初的头寸，即把初始资金计入头寸
         cash_postion = Position(acct=self)
         cash_postion.date = Account.CASH_DAY0
         cash_postion.security_id = Account.CASH_SEC_ID
         cash_postion.amount = self.initial_capital
         cash_postion.today_price = 1
-        self.position_record['0000-00-00'] = [cash_postion]
+        self.position_record[Account.CASH_DAY0] = [cash_postion]
 
         # 总收益率
         self.return_ratio = 0
@@ -175,7 +177,7 @@ class Position:
         self.account = acct         # 对账户对象的引用
 
     def get_value(self):
-        return self.amount*self.today_price
+        return round(self.amount*self.today_price, 2)
 
     def __repr__(self):
         return '<Position {date} {security_id}, ({amount} * {today_price}) >'.format(date=self.date, security_id=self.security_id, amount=self.amount, today_price=self.today_price)
@@ -201,9 +203,8 @@ class StrategyResult:
 
     def __init__(self):
         self.return_rate = 0                        # 总收益率
-        self.total_capital_input = 0.00             # 总资金投入
         self.value = 0                              # 期末资产总价值
-
+        self.total_capital_input = 0                # 期初资本投入
         self.total_number_of_transactions = 0       # 买交易次数
 
         # 每日收益率清单
@@ -216,7 +217,7 @@ class StrategyResult:
     @staticmethod
     def _get_empty_return_table():
         # 返回一个空的收益率明细表格
-        cols_of_return = ['日期', '总资产', '累计投入资金', '收益率', '交易次数']
+        cols_of_return = ['日期', '总资产', '当期收益率', '累计收益率', '交易次数']
         return_table = pd.DataFrame(columns=cols_of_return)
         return_table.set_index('日期', inplace=True)
         return return_table
@@ -243,9 +244,6 @@ class StrategyResult:
         # 总收益率、总资金投入
         self.return_rate = round(float(self.return_record.tail(1)['收益率']), 2)
         # print(self.return_rate)
-        self.total_capital_input = round(float(self.return_record.tail(1)['累计投入资金']), 2)
-        # print(self.total_capital_input)
 
         log.info('总收益率 = {0} %'.format(self.return_rate))
-        log.info('总投入资金 = {0}'.format(self.total_capital_input))
         log.info('交易次数 = {0}'.format(self.total_number_of_transactions))
