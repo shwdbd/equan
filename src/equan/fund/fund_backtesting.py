@@ -42,7 +42,6 @@ class FundBackTester:
         self.end_date = ""
         self._unverise = None   # 资产池
         # benchmark
-        self.account = None     # FIXME 建议删除，无用
         self.commission = 0.001     # 佣金，千分之一
 
         # 内部参数：
@@ -61,6 +60,26 @@ class FundBackTester:
 
         # 测试结果
         self.result = StrategyResult()
+
+    # ------------------------
+    # 客户端需要继承实现的函数
+    def initialize(self):
+        # 用户初始化
+        pass
+
+    def date_handle(self, context):
+        # 需要具体实现继承
+        pass
+
+    def after_dayend(self, context):
+        # 需要具体实现继承
+        pass
+
+    def end(self):
+        # 策略之后后的代码
+        # 需要具体实现继承
+        pass
+    # ------------------------
 
     def fm_log(self, msg):
         # 框架的日志
@@ -113,11 +132,13 @@ class FundBackTester:
         # 结果输出到控制台
         # self.result_export_to_console(self.result)
         exporter.export_to_console(self.result, self)
-        # TODO 结果输出到HTML
+        # 结果输出到HTML
         if self.settings['html-exporter.enabled']:
             print('输出到HTML')
             exporter.export_to_html(self.result, self)
-        # TODO 添加客户端实现的结果输出
+
+        # 客户端实现的结果输出
+        self.end()
 
     def _check_account_data_lack(self, date):
         # 判断账户数据是否有缺失，默认返回True
@@ -148,18 +169,6 @@ class FundBackTester:
     def _load_data(self, symbol):
         # 取得基金日线数据
         return DataAPI.load_fund_daily(symbol, self.start_date, self.end_date)
-
-    def initialize(self):
-        # 用户初始化
-        pass
-
-    def date_handle(self, context):
-        # 需要具体实现继承
-        pass
-
-    def after_dayend(self, context):
-        # 需要具体实现继承
-        pass
 
     def _dayend_handle(self, date):
         """日终处理

@@ -96,7 +96,9 @@ class MyTestStrategy(FundBackTester):
         # # print(acct.get_daily_return())
         # print('-'*10)
         self.dates_of_after_dayend.append(context.today)
-        pass
+
+    def end(self):
+        self.func_called.append('end')
 
 
 class TestMyTestStrategy(unittest.TestCase):
@@ -179,7 +181,7 @@ class TestMyTestStrategy(unittest.TestCase):
         # 检查各函数执行顺序
 
         # 客户都函数被调用顺序
-        func_called = ['__init__', 'initialize']
+        func_called = ['__init__', 'initialize', 'end']
         self.assertListEqual(func_called, strategy.func_called)
 
         # 跑批的日期
