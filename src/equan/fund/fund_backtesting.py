@@ -54,6 +54,7 @@ class FundBackTester:
             "html-exporter.path": r"temp/",
             "html-exporter.file_name": r"我的策略.html",
         }
+        self._running_dates = []    # 需要轮询执行的日期列表
 
         # 初始化上下文
         self._context = Context()
@@ -94,6 +95,10 @@ class FundBackTester:
     def get_context(self):
         return self._context
 
+    def get_running_dates(self):
+        # 返回指定运算的日期列表
+        return self._running_dates
+
     def run(self):
         self.fm_log('回测启动')
         # 策略运行
@@ -103,42 +108,41 @@ class FundBackTester:
         self.initialize()   # 调用用户的策略初始化
         # self.fm_log('用户 initialize() 结束')
 
-        number_of_day = 0
         pre_trade_day = None   # 前一日
-        for date in DataAPI.get_cal(self.start_date, self.end_date):
+        self._running_dates = DataAPI.get_cal(self.start_date, self.end_date)
+        for date in self.get_running_dates():
             # 切日操作：
             self.get_context().today = date
             self.get_context().pre_trade_day = pre_trade_day
 
             # 如当日无数据，则跳过并日志报错
             if self._check_account_data_lack(self.get_context().today):
-                # self.fm_log('策略 {0} 执行 ... '.format(date))
-                self.date_handle(self.get_context())   # 调用用户的策略初始化
+                # 客户：每日逻辑
+                self.date_handle(self.get_context())
 
                 # 日终处理：
-                # self.fm_log('日终处理 {0} ... '.format(date))
-                self._dayend_handle(date)   # 调用用户的策略初始化
+                self._dayend_handle(date)
 
+                # 客户：日终后处理
                 self.after_dayend(self.get_context())
 
-                # self.fm_log('---- {0} OVER -------'.format(date))
-                pre_trade_day = date
-                number_of_day += 1
-        self.fm_log('策略运行完毕 【共{0}个交易日】'.format(number_of_day))
+            # 日期切换
+            pre_trade_day = date
+        self.fm_log('策略运行完毕 【共{0}个交易日】'.format(len(self.get_running_dates())))
 
         # 计算策略总体收益
         self._calculate_strategy_earnings()
 
-        # 结果输出到控制台
-        # self.result_export_to_console(self.result)
+        # 结果输出到控制台(日志文件中)
         exporter.export_to_console(self.result, self)
+
         # 结果输出到HTML
         if self.settings['html-exporter.enabled']:
-            print('输出到HTML')
             exporter.export_to_html(self.result, self)
 
         # 客户端实现的结果输出
         self.end()
+        # ------------------------策略运行完成----------------------------
 
     def _check_account_data_lack(self, date):
         # 判断账户数据是否有缺失，默认返回True
