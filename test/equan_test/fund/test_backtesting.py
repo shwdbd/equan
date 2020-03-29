@@ -49,7 +49,7 @@ class MyTestStrategy(FundBackTester):
 
         # 初始化账户
         fund_acct = Account('基金定投账户', initial_capital=10)
-        self.get_context().add_account('基金定投账户', fund_acct)
+        self.get_context().add_account(fund_acct)
 
         # 资产池
         self.set_unverise(FundUnverise(['005918']))    # 定义资产池

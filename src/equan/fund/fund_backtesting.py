@@ -393,7 +393,9 @@ class Context:
         # 返回所有的账户的对象列表
         return list(self._accounts.values())
 
-    def add_account(self, name, acct_obj):
+    def add_account(self, acct_obj, name=None):
+        if not name:
+            name = acct_obj.name
         if name in self._accounts:
             raise KeyError('同名账户已存在')
         self._accounts[name] = acct_obj
