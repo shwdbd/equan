@@ -30,6 +30,7 @@ from equan.fund.fund_backtesting_impl import Order, Account, Position, StrategyR
 from equan.fund.data_api import DataAPI
 import equan.fund.result_exportor as exporter
 import math
+import datetime
 
 log = tl.get_logger()
 
@@ -101,6 +102,9 @@ class FundBackTester:
 
     def run(self):
         self.fm_log('回测启动')
+
+        start_time = datetime.datetime.now()    # 开始执行时间戳
+
         # 策略运行
         self._initialize_by_framework()   # 准备数据等
 
@@ -143,6 +147,8 @@ class FundBackTester:
         # 客户端实现的结果输出
         self.end()
         # ------------------------策略运行完成----------------------------
+        end_time = datetime.datetime.now()
+        self.fm_log('策略运行时间 ：{0} 秒'.format((end_time-start_time).seconds))
 
     def _check_account_data_lack(self, date):
         # 判断账户数据是否有缺失，默认返回True
