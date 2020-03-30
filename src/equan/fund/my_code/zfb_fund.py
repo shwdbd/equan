@@ -99,8 +99,8 @@ if __name__ == "__main__":
     pd.set_option('display.max_columns', 500)
 
     # 开始回测
-    start_date = '2019-01-01'
-    end_date = '2020-01-01'
+    start_date = '2019-11-01'
+    end_date = '2020-03-27'
     strategy = ZFB_HS300Index_Fund()
     strategy.start_date = start_date
     strategy.end_date = end_date
