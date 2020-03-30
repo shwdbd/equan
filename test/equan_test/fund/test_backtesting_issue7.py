@@ -17,7 +17,7 @@ from equan.fund.fund_backtesting import FundBackTester
 from equan.fund.fund_backtesting_impl import Account, FundUnverise
 import equan.fund.tl as tl
 import unittest
-import equan.fund.data_api as data_api
+import equan.fdata.fdata_settings as CI
 import shutil
 import os
 
@@ -70,15 +70,15 @@ class TestMyTestStrategy_Issue7(unittest.TestCase):
         # 准备测试数据
         shutil.copy2(self.test_path + r'005918_backtesting_issue7.csv', self.data_path + r'005918.csv')
         shutil.copy2(self.test_path + r'cal_backtesting_issue7.csv', self.data_path + r'cal.csv')
-        self.bak_of_filepath = data_api.CAL_DATA_FILE
-        data_api.CAL_DATA_FILE = self.data_path + r'cal.csv'
-        self.bak_of_dirpath = data_api.FUND_DATA_DIR
-        data_api.FUND_DATA_DIR = self.data_path
+        self.bak_of_filepath = CI.CAL_DATA_FILE
+        CI.CAL_DATA_FILE = self.data_path + r'cal.csv'
+        self.bak_of_dirpath = CI.FUND_DATA_DIR
+        CI.FUND_DATA_DIR = self.data_path
         return super().setUp()
 
     def tearDown(self):
-        data_api.CAL_DATA_FILE = self.bak_of_filepath
-        data_api.FUND_DATA_DIR = self.bak_of_dirpath
+        CI.CAL_DATA_FILE = self.bak_of_filepath
+        CI.FUND_DATA_DIR = self.bak_of_dirpath
         # 删除测试用文件
         os.remove(self.data_path + r'005918.csv')
         os.remove(self.data_path + r'cal.csv')
@@ -105,8 +105,8 @@ if __name__ == "__main__":
     data_path = r'test/equan_test/fund/fund_data/'  # 测试文件存放路径
     shutil.copy2(test_path + r'005918_backtesting_issue7.csv', data_path + r'005918.csv')
     shutil.copy2(test_path + r'cal_backtesting_issue7.csv', data_path + r'cal.csv')
-    data_api.CAL_DATA_FILE = data_path + r'cal.csv'
-    data_api.FUND_DATA_DIR = data_path
+    CI.CAL_DATA_FILE = data_path + r'cal.csv'
+    CI.FUND_DATA_DIR = data_path
 
     start_date = '2019-01-01'
     end_date = '2019-01-09'

@@ -12,10 +12,6 @@
 from equan.fund.fund_backtesting import FundBackTester
 from equan.fund.fund_backtesting_impl import Account, FundUnverise
 import equan.fund.tl as tl
-import unittest
-import equan.fund.data_api as data_api
-import shutil
-import os
 import datetime
 
 log = tl.get_logger()

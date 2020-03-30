@@ -27,7 +27,7 @@ v 0.0.1 版本说明：
 import pandas as pd
 import equan.fund.tl as tl
 from equan.fund.fund_backtesting_impl import Order, Account, Position, StrategyResult
-from equan.fund.data_api import DataAPI
+import equan.fdata as fd
 import equan.fund.result_exportor as exporter
 import math
 import datetime
@@ -113,7 +113,7 @@ class FundBackTester:
         # self.fm_log('用户 initialize() 结束')
 
         pre_trade_day = None   # 前一日
-        self._running_dates = DataAPI.get_cal(self.start_date, self.end_date)
+        self._running_dates = fd.get_cal(self.start_date, self.end_date)
         for date in self.get_running_dates():
             # 切日操作：
             self.get_context().today = date
@@ -178,7 +178,7 @@ class FundBackTester:
 
     def _load_data(self, symbol):
         # 取得基金日线数据
-        return DataAPI.load_fund_daily(symbol, self.start_date, self.end_date)
+        return fd.fund_daily_price(symbol, self.start_date, self.end_date)
 
     def _dayend_handle(self, date):
         """日终处理

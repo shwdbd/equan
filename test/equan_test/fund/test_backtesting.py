@@ -30,7 +30,7 @@ from equan.fund.fund_backtesting_impl import Account, FundUnverise, Order
 import equan.fund.tl as tl
 import unittest
 import datetime
-import equan.fund.data_api as data_api
+import equan.fdata.fdata_settings as CI
 import shutil
 import os
 import pandas as pd
@@ -70,7 +70,7 @@ class MyTestStrategy(FundBackTester):
         self.data_snap = copy.deepcopy(self.get_context().data)
 
         data_df = self.get_context().data['005918']
-        data_df['week'] = data_df['date'].apply(lambda x: datetime.datetime.strptime(x, data_api.DATE_FORMAT).weekday()+1)
+        data_df['week'] = data_df['date'].apply(lambda x: datetime.datetime.strptime(x, CI.DATE_FORMAT).weekday()+1)
         self.testdata_init_datadf = data_df.copy()  # 生成检测用数据
         # print(self.testdata_init_datadf['week'])
 
@@ -120,15 +120,15 @@ class TestMyTestStrategy(unittest.TestCase):
         # 准备测试数据
         shutil.copy2(self.test_path + r'005918_backtesting.csv', self.data_path + r'005918.csv')
         shutil.copy2(self.test_path + r'cal_backtesting.csv', self.data_path + r'cal.csv')
-        self.bak_of_filepath = data_api.CAL_DATA_FILE
-        data_api.CAL_DATA_FILE = self.data_path + r'cal.csv'
-        self.bak_of_dirpath = data_api.FUND_DATA_DIR
-        data_api.FUND_DATA_DIR = self.data_path
+        self.bak_of_filepath = CI.CAL_DATA_FILE
+        CI.CAL_DATA_FILE = self.data_path + r'cal.csv'
+        self.bak_of_dirpath = CI.FUND_DATA_DIR
+        CI.FUND_DATA_DIR = self.data_path
         return super().setUp()
 
     def tearDown(self):
-        data_api.CAL_DATA_FILE = self.bak_of_filepath
-        data_api.FUND_DATA_DIR = self.bak_of_dirpath
+        CI.CAL_DATA_FILE = self.bak_of_filepath
+        CI.FUND_DATA_DIR = self.bak_of_dirpath
         # 删除测试用文件
         os.remove(self.data_path + r'005918.csv')
         os.remove(self.data_path + r'cal.csv')
@@ -441,7 +441,7 @@ class TestMyTestStrategy(unittest.TestCase):
 
 if __name__ == "__main__":
     # # 准备测试数据
-    # data_api.FUND_DATA_DIR = r'test/equan_test/fund/fund_data/'
+    # CI.FUND_DATA_DIR = r'test/equan_test/fund/fund_data/'
     # shutil.copy2(r'test/equan_test/fund/005918_backtesting_1.csv', r'test/equan_test/fund/fund_data/005918.csv')
     # # os.remove(r'test/equan_test/fund/fund_data/005918.csv')
 
