@@ -60,6 +60,7 @@ class ZFB_HS300Index_Fund(FundBackTester):
         acct = context.get_account('基金定投账户')
 
         week = df.loc[context.today, '星期']
+        # print('{0} week is {1}'.format(today, week))
         if week == 5:       # 周5运行，决定下周1是否买入
             nap = (df.loc[today, 'price'] - df.loc[today, 'SMA_20'])/df.loc[today, 'std_20']
             log.info('{0} nap = {1} '.format(today, nap))
@@ -100,7 +101,8 @@ if __name__ == "__main__":
 
     # 开始回测
     start_date = '2019-11-01'
-    end_date = '2020-03-27'
+    # start_date = '2020-01-01'
+    end_date = '2020-04-03'
     strategy = ZFB_HS300Index_Fund()
     strategy.start_date = start_date
     strategy.end_date = end_date

@@ -40,7 +40,10 @@ def download_fund_nv_daily(fund_symbol):
     """
     ts.set_token(TOKEN)
     pro = ts.pro_api()
-    df = pro.fund_nav(ts_code='005918.OF', fields=['ts_code', 'end_date', 'unit_nav'])
+    # df = pro.fund_nav(ts_code='005918.OF', fields=['ts_code', 'end_date', 'unit_nav'])
+    df = pro.fund_nav(ts_code='005918.OF')
+    df.drop_duplicates(subset=['end_date'], keep='last', inplace=True)    # 去重复
+    # print(df[df['end_date'] == '20191231'])
 
     # df修改为老规则的样式
     df['JZZZL'] = ''
@@ -49,9 +52,11 @@ def download_fund_nv_daily(fund_symbol):
     df.rename(columns={'end_date': 'FSRQ', 'unit_nav': 'DWJZ'}, inplace=True)
     df['FSRQ'] = df['FSRQ'].apply(lambda x: x[0:4] + '-' + x[4: 6] + '-' + x[6: 8])  # 日期格式修改
     df.sort_values(by='FSRQ', ascending=True, inplace=True)
+    # print(df.head())
 
     csv_path = fund_data_file_dir + fund_symbol[: fund_symbol.find('.')] + '.csv'
-    df[['FSRQ', 'DWJZ', 'JZZZL', 'SGZT', 'SHZT']].to_csv(csv_path, index=False)
+    fields = ['FSRQ', 'DWJZ', 'JZZZL', 'SGZT', 'SHZT']
+    df[fields].to_csv(csv_path, index=False)
 
     print('下载{0}净值数据{1}条记录 ==> {2}'.format(fund_symbol, df.shape[0], csv_path))
 
