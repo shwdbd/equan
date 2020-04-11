@@ -21,5 +21,8 @@ if __name__ == "__main__":
     # df = pro.fund_daily(trade_date='20200403')
     # df.to_csv(r'c:/temp/fund_daily_005918_OF.csv', index=False)
 
-    df = pro.fund_nav(ts_code='005918.OF')
-    df.to_csv(r'c:/temp/fund_nav_005918_OF.csv', index=False)
+    # df = pro.fund_nav(ts_code='005918.OF')
+    # df.to_csv(r'c:/temp/fund_nav_005918_OF.csv', index=False)
+
+    df = pro.fund_nav(end_date='20200403')
+    df.to_csv(r'c:/temp/fund_nav_20200403.csv', index=False)
