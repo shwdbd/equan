@@ -28,7 +28,7 @@ fund_data_file_dir = r'data_file/ttjj/'
 
 
 def download_fund_nv_daily(fund_symbol):
-    """下载基金净值数据到本地文件
+    """下载基金净值数据到本地文件（全部日期的净值数据）
 
     下载后替换原有文件
 

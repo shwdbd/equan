@@ -20,8 +20,8 @@ class MyAIPStrategy(FundBackTester):
     def __init__(self):
         super().__init__()
         # 初始化账户
-        fund_acct = Account('基金定投账户', initial_capital=10*10000)
-        self.get_context().add_account('基金定投账户', fund_acct)
+        fund_acct = Account('基金账户', initial_capital=10*10000)
+        self.get_context().add_account('基金账户', fund_acct)
 
         # 资产池
         self.set_unverise(FundUnverise(['005918']))    # 定义资产池
@@ -36,8 +36,6 @@ class MyAIPStrategy(FundBackTester):
         df['SMA_20'] = df['price'].rolling(window=self.sma_window, min_periods=1).mean()
         df['std_20'] = df['price'].rolling(window=self.sma_window, min_periods=1).std()
         df['price_ysd'] = df['price'].shift(1)     # 计算昨天的价格
-        # print(df.head())
-        # print(df.loc['2020-01-07', '星期'])
 
         # 星期数据的计算
         df['星期'] = df['date'].apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').weekday()+1)
@@ -47,21 +45,24 @@ class MyAIPStrategy(FundBackTester):
         # log.info('today = ' + context.today)
         today = context.today
         df = self.get_context().data['005918']
-        acct = context.get_account('基金定投账户')
+        acct = context.get_account('基金账户')
+
+        step_1 = 0.1
+        step_2 = 1
 
         week = df.loc[context.today, '星期']
         if week == 5:       # 周1运行，决定周2是否买入
             nap = (df.loc[today, 'price'] - df.loc[today, 'SMA_20'])/df.loc[today, 'std_20']
             log.info('{0} nap = {1} '.format(today, nap))
-            if nap >= -0.1 and nap <= 0.1:
+            if nap >= -1*step_1 and nap <= step_1:
                 buy_amount = self.pr_input
-            elif nap > 0.1 and nap <= 1:
+            elif nap > step_1 and nap <= step_2:
                 buy_amount = self.pr_input * 0.5
-            elif nap > 1:
+            elif nap > step_2:
                 buy_amount = self.pr_input * 0
-            elif nap < -0.1 and nap >= -1:
+            elif nap < -1*step_1 and nap >= -1*step_2:
                 buy_amount = self.pr_input * 1.5
-            elif nap < -1:
+            elif nap < -1*step_2:
                 buy_amount = self.pr_input * 2
             else:
                 buy_amount = 0
@@ -73,8 +74,6 @@ class MyAIPStrategy(FundBackTester):
                 acct.order(date=today, securiy_id='005918', amount=order_amount, price=order_price)
                 log.info('{0} 买入 {1} '.format(today, buy_amount))
 
-        # TODO 要考虑 止盈、止亏
-
 
 if __name__ == "__main__":
     pd.set_option('display.unicode.ambiguous_as_wide', True)
@@ -84,7 +83,7 @@ if __name__ == "__main__":
 
     # 开始回测
     start_date = '2019-01-01'
-    end_date = '2020-03-23'
+    end_date = '2020-04-10'
     strategy = MyAIPStrategy()
     strategy.start_date = start_date
     strategy.end_date = end_date

@@ -399,7 +399,7 @@ class Context:
         # 返回所有的账户的对象列表
         return list(self._accounts.values())
 
-    def add_account(self, acct_obj, name=None):
+    def add_account(self, name, acct_obj):
         if not name:
             name = acct_obj.name
         if name in self._accounts:
