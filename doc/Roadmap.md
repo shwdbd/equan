@@ -8,7 +8,11 @@ equan共分为三个子模块：
 
 ## fd_api
 
+金融数据API
+
 ## backtesting
+
+回测框架
 
 规划版本如下：
 
@@ -16,3 +20,10 @@ equan共分为三个子模块：
 - bt v 0.2.1 
   - new: 添加benchmark比较功能
   - new: 支持多基金账户
+
+## simaw 司马王
+
+个人记账软件
+
+- simaw v 0.1
+  - 第一个可执行版本
